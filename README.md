@@ -136,7 +136,8 @@ astro-restauracion/
 ├── src/
 │   ├── diffusion.py
 │   ├── analysis.py
-│   └── honesty.py
+│   ├── honesty.py
+│   └── validation.py
 ├── assets/
 │   └── ejemplos/
 │       ├── README.md
@@ -227,7 +228,7 @@ La GPU AMD no permite utilizar directamente una distribución de PyTorch destina
 
 El proyecto no incluye una configuración validada de aceleración para este equipo. Los 8 GB de VRAM no garantizan que un pipeline sea compatible o pueda ejecutarse con cualquier resolución. Se completó una prueba en CPU con PyTorch `2.15.0+cpu` y precisión `bfloat16`: entrada preparada de 256 × 192 píxeles y dos pasos efectivos de DDIM. La inferencia midió 174,832 segundos y la carga con pesos ya descargados, 18,127 segundos. Son tiempos de esa ejecución, no una estimación general. Un intento inicial en `float32` falló por falta de memoria; la configuración final utiliza precisión reducida.
 
-El desarrollo principal se realizará localmente en VS Code, con GitHub como repositorio central. Para experimentos que requieran GPU se utiliza Google Colab, sujeto a disponibilidad de recursos y compatibilidad de las versiones. El notebook `colab/ejecutar_en_colab.ipynb` incluye preparación, comprobación de CUDA, prueba de difusión y lanzamiento de la interfaz. La autora registró una prueba de inferencia en T4; el acceso a Gradio remoto continúa pendiente de verificación.
+El desarrollo principal se realizará localmente en VS Code, con GitHub como repositorio central. Para experimentos que requieran GPU se utiliza Google Colab, sujeto a disponibilidad de recursos y compatibilidad de las versiones. El notebook `colab/ejecutar_en_colab.ipynb` incluye preparación, comprobación de CUDA, prueba de difusión y lanzamiento de la interfaz. La autora registró una prueba de inferencia en T4; la autora confirmó que la aplicación funciona desde el enlace público de Gradio. El enlace local corresponde al servidor remoto de Colab.
 
 ## 10. Instalación y ejecución
 
@@ -247,10 +248,10 @@ uv sync --locked
 Ejecutar la aplicación desde la raíz:
 
 ```powershell
-uv run --locked python app.py
+uv run app.py
 ```
 
-Gradio muestra una dirección local en la terminal. Abrirla en el navegador, subir un PNG o TIFF de 8 bits y pulsar **Ejecutar prueba de difusión**. La primera prueba descarga varios GB de pesos; las siguientes reutilizan la caché. Se muestran la entrada preparada, la salida generativa y los parámetros. Detener el servidor con `Ctrl+C`. El comando anterior `astro-restauracion` fue retirado al eliminar el paquete anidado.
+Gradio muestra una dirección local en la terminal. Abrirla en el navegador, subir un PNG o TIFF de 8 bits y pulsar **Ejecutar prueba de difusión**. La primera prueba descarga varios GB de pesos; las siguientes reutilizan la caché. Se muestran la entrada preparada, la salida generativa y los parámetros. Detener el servidor con `Ctrl+C`. También puede utilizarse `uv run --locked python app.py` para exigir el archivo de bloqueo actualizado. El comando exacto `uv run app.py` se verificó con HTTP 200, control de subida, botón de proceso y ambos paneles de comparación. El comando anterior `astro-restauracion` fue retirado al eliminar el paquete anidado.
 
 ### Prueba técnica por consola
 
@@ -279,7 +280,37 @@ El **11 de noviembre de 2026** se verificó además el comando de prueba técnic
 
 Los artefactos locales son [entrada preparada](outputs/prueba_diffusion/entrada_preparada.png), [salida de prueba](outputs/prueba_diffusion/salida.png) y [registro de parámetros](outputs/prueba_diffusion/parametros.json). No se publican en Git; esos enlaces solo funcionan después de ejecutar la prueba localmente. La entrada tiene SHA-256 `9bc563fef8171c749cc455ad9b0b140652cd26c28187eff4983686bf74f147a2`. La prueba usa una derivada de la imagen acreditada a **NASA, ESA, and J. Comerford (University of Colorado-Boulder)**; la conversión, el redimensionamiento y la salida generativa son modificaciones del proyecto. No se agregó ruido sintético ni se midió eficacia de restauración.
 
-### Ejecución prevista en Colab
+### Validación de cinco imágenes — etapa 2
+
+Con los cinco TIFF de 8 bits descargados según el [registro de ejemplos](assets/ejemplos/README.md), ejecutar:
+
+```powershell
+uv run --locked python -m src.validation --device auto
+```
+
+La validación procesa `potw1803a.tif`, `potw1428a.tif`, `heic0503a.tif`, `heic1520a.tif` y `potw1408a.tif`, con semilla 42, cuatro pasos configurados, intensidad 0,5 y tamaño máximo 256. Excluye `heic1702a.tif` porque es de 16 bits por canal. Puede solicitarse `--device cuda` si existe una GPU compatible o `--device cpu` para ejecutarla localmente; esta última opción puede tardar varios minutos por imagen.
+
+Se reutiliza el modelo en memoria y se crea una carpeta por imagen en `outputs/etapa2/`, con entrada preparada, salida, parámetros y `comparacion.png` (entrada a la izquierda y salida a la derecha). `resumen.json` se actualiza después de cada caso y solo marca la ejecución completa cuando hay cinco resultados correctos con hashes de entrada diferentes. Se registran errores individuales sin declararlos como pruebas exitosas. Los resultados permanecen locales, excluidos de Git.
+
+Esta comprobación acredita el procesamiento técnico de cinco imágenes distintas. No mide reducción de ruido ni demuestra autenticidad científica; las comparaciones deben revisarse visualmente.
+
+### Resultados registrados de la etapa 2
+
+El 11 de noviembre de 2026 se completaron cinco ejecuciones en CPU con PyTorch 2.15.0, precisión bfloat16, Python 3.12.10, Diffusers 0.42.1, semilla 42, intensidad 0,5 y dos pasos efectivos de DDIM. Cada caso tiene una entrada distinta, original intacto y salida no uniforme. Se generaron y revisaron las comparaciones contra la entrada preparada, no contra el TIFF a resolución completa.
+
+- **potw1803a.tif:** 256 × 192 píxeles; 161.042 s de inferencia. Cambios notorios en las formas, colores y brillos de las galaxias; no acredita limpieza de ruido.
+- **potw1428a.tif:** 256 × 248 píxeles; 222.833 s de inferencia. Aparecen patrones curvos y brillos alargados que no se aprecian en la referencia preparada; cambia la apariencia del cúmulo.
+- **heic0503a.tif:** 248 × 248 píxeles; 223.288 s de inferencia. Se alteran las estructuras del polvo y la distribución de colores y brillos alrededor de V838 Mon.
+- **heic1520a.tif:** 256 × 168 píxeles; 137.070 s de inferencia. Se modifican y engrosan filamentos; aparecen trazos curvos distintos de los de la referencia preparada.
+- **potw1408a.tif:** 256 × 120 píxeles; 102.478 s de inferencia. Cambian numerosos brillos puntuales y las formas y colores de la nebulosidad; no se puede afirmar conservación de detalles.
+
+Los tiempos pertenecen a estas ejecuciones locales; no describen el rendimiento de Colab ni son un benchmark general. La prueba de T4 documentada más abajo se realizó por separado sobre una imagen.
+
+**Resultado técnico:** cinco casos correctos, cinco hashes de entrada diferentes y comparaciones visuales disponibles. **Resultado visual:** se observaron alteraciones importantes en todos los casos; estas salidas no demuestran mejora de denoising ni fidelidad científica. La intensidad 0,5 se utilizó para una prueba técnica corta, no como parámetro recomendado de restauración. Estos ejemplos se conservan como material de fallos para la etapa 3.
+
+Artefactos locales: [resumen de resultados](outputs/etapa2/resumen.json) y [comparaciones de los cinco casos](outputs/etapa2/comparaciones.png). Cada subcarpeta contiene `entrada_preparada.png`, `salida.png`, `comparacion.png` y `parametros.json`. Están excluidos de Git; los enlaces funcionan después de ejecutar la validación. Los créditos, fuentes y condiciones de las imágenes se conservan en el [registro de ejemplos](assets/ejemplos/README.md).
+
+### Ejecución en Colab
 
 1. Abrir [Google Colab](https://colab.research.google.com/) y seleccionar **Archivo → Subir notebook** para cargar la copia local de `colab/ejecutar_en_colab.ipynb`. Esta opción permite usar el notebook actualizado aunque aún no esté publicado en GitHub.
 2. En **Entorno de ejecución → Cambiar tipo de entorno de ejecución**, seleccionar GPU (por ejemplo T4, si está disponible) y conectar. Los recursos dependen de la disponibilidad de Colab.
@@ -293,7 +324,7 @@ El notebook clona el código que ya está publicado en GitHub; los cambios local
 
 El [nivel gratuito de Colab](https://research.google.com/colaboratory/faq.html) puede finalizar sesiones cuyo uso principal sea una interfaz web externa; se prioriza la prueba interactiva dentro del notebook. Los resultados temporales se pierden al eliminarse el entorno. La descarga automática falló con HTTP 403 y se incorporó la subida mediante ipywidgets. No se realizó ninguna publicación automática.
 
-**Prueba GPU registrada por la autora el 11 de noviembre de 2026:** las salidas conservadas del notebook muestran una Tesla T4, Python 3.12.3, dispositivo `cuda:0` y precisión `float16`. Con la misma entrada y parámetros de la prueba CPU, se registraron **45,825 segundos de carga** y **2,294 segundos de inferencia**, y se mostraron las dos imágenes. La ejecución local en CPU había medido 174,832 segundos de inferencia. Estos valores corresponden a dos ejecuciones en entornos y precisiones distintos; no constituyen un benchmark general ni una evaluación de denoising. Falta verificar el acceso a la interfaz Gradio remota. La salida en vivo de subprocesos se añadió después para que los registros y el enlace sean visibles desde VS Code.
+**Prueba GPU registrada por la autora el 11 de noviembre de 2026:** las salidas conservadas del notebook muestran una Tesla T4, Python 3.12.3, dispositivo `cuda:0` y precisión `float16`. Con la misma entrada y parámetros de la prueba CPU, se registraron **45,825 segundos de carga** y **2,294 segundos de inferencia**, y se mostraron las dos imágenes. La ejecución local en CPU había medido 174,832 segundos de inferencia. Estos valores corresponden a dos ejecuciones en entornos y precisiones distintos; no constituyen un benchmark general ni una evaluación de denoising. La autora confirmó posteriormente el acceso y funcionamiento de la interfaz desde su enlace público. La salida en vivo de subprocesos se añadió después para que los registros y el enlace sean visibles desde VS Code.
 
 ## 11. Alcance y limitaciones
 
@@ -334,7 +365,7 @@ La restauración visual y la verificación científica son tareas distintas. El 
 - Carga diferida de Stable Diffusion 1.5 con revisión fijada y prueba imagen a imagen.
 - Exportación por consola de entrada preparada, salida y parámetros reproducibles.
 - Módulos de análisis y diferencias preparados, sin procesamiento implementado.
-- Notebook de Colab con una prueba GPU registrada por la autora; acceso a Gradio remoto pendiente de verificación.
+- Notebook de Colab con una prueba GPU registrada por la autora y acceso a Gradio desde el enlace público confirmado por ella.
 - Instrucciones para agentes en `AGENTS.md` y registro previsto de permisos de imágenes.
 - Exclusión del entorno virtual y archivos generados mediante `.gitignore`.
 - Remoto GitHub configurado.
@@ -352,38 +383,67 @@ La restauración visual y la verificación científica son tareas distintas. El 
 
 El nombre público **AstroRestore AI** convive con el nombre técnico del proyecto `astro-restauracion`. Se eliminó el antiguo paquete `src/astro_restauracion/` y su comando de saludo para adoptar la disposición solicitada. Se preservaron autoría, versión, selección de Python y dependencias directas; la descripción de `pyproject.toml` ahora refleja el objetivo del proyecto. El archivo `uv.lock` se actualizó para representar la aplicación sin empaquetado.
 
-## 13. Plan de trabajo por fases
+## 13. Plan según las etapas del docente
 
-### Fase 1 — Base del proyecto y prueba del modelo (etapa actual)
+Las fechas siguientes corresponden al cronograma propuesto por el docente. Las verificaciones registradas en este repositorio se realizaron el 11 de noviembre de 2026; no se atribuyen retrospectivamente a las fechas previstas.
+
+### Etapa 1 — Fundamentos (4–5 de noviembre) — completada
 
 - [x] Persona Julia definida y documentada.
-- [x] Proyecto, problema y alcance declarados.
+- [x] Proyecto, problema y alcance declarados: sub-tarea B, con denoising como foco del MVP.
 - [x] Repositorio creado, estructurado y publicado con historial de commits.
 - [x] Entorno Python 3.12 y uv funcionando.
-- [x] Modelo de difusión cargado y una imagen de prueba generada: ejecución real en CPU verificada el 11 de noviembre de 2026; entrada, salida y parámetros conservados en `outputs/prueba_diffusion/`.
+- [x] Hardware y limitaciones documentados; modelo cargado e imagen de prueba generada en CPU y en una T4 de Colab.
 
-**Criterio de cierre:** cargar la revisión fijada de Stable Diffusion y guardar una salida no bloqueada por el filtro de seguridad, junto con la entrada preparada y sus parámetros. Esto no demuestra reducción de ruido.
+**Evidencia:** registros locales de la prueba CPU y salidas de la prueba T4 conservadas en el notebook. El modelo tiene revisión y licencia identificadas. No se entrenó un modelo desde cero.
 
-### Fase 2 — Ruido sintético controlado
+### Etapa 2 — Prototipo básico (6–9 de noviembre) — completada el 11 de noviembre de 2026
 
-Conservar el archivo descargado y preparar una referencia de trabajo común. Agregar inicialmente ruido gaussiano con NumPy, con intensidad y semilla independientes de la semilla de difusión. Mostrar y exportar la referencia y la imagen ruidosa, manteniendo idénticas dimensiones, escala y canales. La referencia de trabajo será la imagen antes de agregar ruido, no una observación científica perfecta. Documentar normalización, saturación y parámetros; otros tipos de ruido quedan para después.
+- [x] Interfaz Gradio con carga de PNG/TIFF de 8 bits.
+- [x] Procesamiento real con Stable Diffusion 1.5.
+- [x] Entrada preparada y salida en la misma pantalla, sin modificar el archivo de origen.
+- [x] Arranque con el comando exacto `uv run app.py`, verificado por HTTP.
+- [x] Aplicación accesible en Colab desde el enlace público, según confirmación de la autora.
+- [x] Commits pequeños que muestran la evolución y las correcciones.
+- [x] Pruebas técnicas completas con cinco imágenes distintas y revisión de sus comparaciones; registro local en `outputs/etapa2/resumen.json`.
 
-**Criterio de cierre:** repetir la degradación con los mismos parámetros produce la misma imagen ruidosa y nunca modifica el archivo de origen.
+**Criterio de cierre:** cinco ejecuciones correctas sobre entradas distintas, con salida y registro por caso. Se verifican dimensiones, salidas no uniformes, hashes y comparación visual. El procesamiento básico acredita la integración del modelo; no se presenta como reducción de ruido demostrada. La generación de ruido, el análisis visual y la comparación triple no son prerrequisitos para cerrar esta etapa.
 
-### Fase 3 — Limpieza experimental y comparación triple en Gradio
+**Entregable:** aplicación que procesa imágenes mediante `uv run app.py`, ejecución alternativa en Colab y resultados reproducibles de las cinco pruebas mediante `src/validation.py`.
 
-Conectar la imagen ruidosa con difusión y mostrar **referencia preparada → imagen con ruido → salida procesada** en la misma pantalla. Permitir ajustar la intensidad, repetir semillas y descargar las imágenes y parámetros. Ofrecer también un modo para subir una imagen ya ruidosa: en ese caso no hay referencia limpia disponible y se muestran entrada y salida sin inventar una referencia.
+### Etapa 3 — Análisis visual y honestidad (10–13 de noviembre) — pendiente
 
-**Criterio de cierre:** una carga propia completa el recorrido hasta la salida, con comparación y explicación de qué operaciones se aplicaron. Evaluar si el modelo reduce ruido sin borrar o inventar demasiados detalles; si falla, revisar el modelo antes de afirmar que restaura.
+La prioridad es integrar CLIP ViT-B/32 y un informe comprensible para Julia. El informe combinará las afinidades con descripciones fijas y una explicación de los parámetros aplicados, sin atribuir a CLIP capacidad para certificar autenticidad o describir por sí solo todos los cambios.
 
-### Fase 4 — Análisis visual y honestidad
+- [ ] Integrar el análisis de imágenes original y procesada con un modelo de Hugging Face.
+- [ ] Mostrar un informe en lenguaje natural y comunicar sus límites.
+- [ ] Documentar ejemplos reales de aciertos y de fallos o alteraciones de estructuras.
+- [x] Mantener elementos de honestidad ya disponibles: comparación, control de intensidad y advertencias de reconstrucción.
+- [ ] Incorporar, si aporta claridad, un mapa de diferencias en `honesty.py`.
 
-Integrar CLIP ViT-B/32 de Hugging Face con descripciones fijas, comparar resultados de entrada y salida y explicar sus puntuaciones como afinidades relativas. Implementar el mapa de diferencias y avisos claros en `honesty.py`. Explicar las modificaciones en lenguaje comprensible y separar cambios observados de afirmaciones no verificables.
+**Experimento acotado de ruido:** conservar el TIFF y preparar una referencia común; agregar inicialmente un nivel de ruido gaussiano con NumPy y una semilla propia. Procesar esa versión manteniendo fija la semilla del modelo y comparar **referencia preparada → imagen ruidosa → salida procesada**. Registrar dimensiones, canales, normalización, saturación y parámetros. Cambiar un parámetro por vez al explorar pasos e intensidad. Esto evalúa el modelo preentrenado; no lo entrena. La referencia publicada no es una observación científica perfecta y el ruido sintético no representa todo ruido real.
 
-**Criterio de cierre:** carga → difusión → análisis visual → resultados en una sola aplicación. CLIP no se usa como detector de detalles inventados ni como medida de calidad científica.
+Para una imagen que ya tiene ruido, sin referencia limpia, mostrar entrada y salida sin inventar una referencia. Si el modelo borra o inventa detalles, registrar el fallo y revisar su adecuación. El mapa de diferencias indica modificaciones, no autenticidad.
 
-### Fase 5 — Reproducibilidad y entrega académica
+**Criterio de cierre:** carga → difusión → análisis visual → resultados, con explicaciones comprensibles y ejemplos documentados. El análisis visual es obligatorio para la entrega final; las métricas y una línea base clásica son opcionales.
 
-Verificar el procedimiento desde una copia nueva y ejecutar el notebook en Colab con GPU disponible. Completar el README con modelos, revisiones, licencias, hardware realmente probado, capturas de uso, decisiones justificadas desde HAI, sección **Qué es real y qué es inventado**, limitaciones y participación del agente frente a las decisiones de la autora. Grabar la demo de cinco minutos con resultados reales.
+### Etapa 4 — Documentación y demo (14–16 de noviembre) — pendiente
 
-**Criterio de cierre:** otra persona puede seguir el README y completar el pipeline; están cubiertos los requisitos técnicos y documentales obligatorios. PSNR, SSIM, línea base clásica, historial, lotes y despliegue público se consideran mejoras opcionales posteriores.
+- [ ] Mejorar mensajes, errores y estados de carga donde todavía sea necesario.
+- [ ] Completar el README según el template del docente, incluyendo modelos, revisiones, licencias y hardware probado.
+- [ ] Incorporar capturas y ejemplos reales de uso.
+- [ ] Justificar decisiones desde HAI e identificar decisiones de la autora y propuestas del agente.
+- [ ] Completar la sección **Qué es real y qué es inventado** y las limitaciones conocidas.
+- [ ] Probar instalación y ejecución desde una copia nueva del repositorio, localmente o en Colab.
+- [ ] Grabar y enlazar la demo de cinco minutos: problema, uso completo, resultados y reflexión sobre la reconstrucción.
+- [ ] Revisar todos los requisitos técnicos y documentales obligatorios.
+
+**Criterio de cierre:** otra persona puede seguir el README y completar el pipeline, con documentación y video accesibles. Los resultados deben ser observados y registrados, nunca supuestos.
+
+### Etapa 5 — Contingencia y buffer (17–18 de noviembre) — reservada
+
+Resolver errores finales, completar el formulario de entrega con tiempo y preparar la defensa de las decisiones y conceptos aplicados. No agregar funciones complejas, cambiar los modelos principales ni rehacer el proyecto durante esta etapa.
+
+### Estrategia de trabajo
+
+Mantener siempre una versión que funcione. Priorizar difusión y análisis, honestidad sobre las modificaciones, documentación y demo. PSNR, SSIM, LPIPS, filtros clásicos, múltiples modelos, historial, lotes y despliegue público son opcionales. Evitar bloqueos técnicos de más de dos horas: simplificar tamaño o alcance, buscar alternativas y consultar al docente o al grupo cuando corresponda. Antes de ampliar el alcance, revisar: **si se entrega hoy, ¿cumple los requisitos obligatorios?**
