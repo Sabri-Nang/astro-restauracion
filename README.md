@@ -317,14 +317,38 @@ La restauración visual y la verificación científica son tareas distintas. El 
 
 El nombre público **AstroRestore AI** convive con el nombre técnico del proyecto `astro-restauracion`. Se eliminó el antiguo paquete `src/astro_restauracion/` y su comando de saludo para adoptar la disposición solicitada. Se preservaron autoría, versión, selección de Python y dependencias directas; la descripción de `pyproject.toml` ahora refleja el objetivo del proyecto. El archivo `uv.lock` se actualizó para representar la aplicación sin empaquetado.
 
-## 13. Próximas etapas
+## 13. Plan de trabajo por fases
 
-1. Seleccionar datasets públicos y documentar procedencia, licencias y criterios de evaluación.
-2. Definir el tratamiento de PNG y TIFF, incluidos profundidad de bits, canales, normalización y dimensiones.
-3. Validar el entorno de inferencia y decidir la ejecución local o en Colab; revisar las dependencias necesarias.
-4. Evaluar el modelo candidato y seleccionar el modelo de difusión y el modelo de visión según licencia, compatibilidad y resultados.
-5. Implementar componentes modulares de carga, preprocesamiento, restauración y línea base bilateral.
-6. Implementar mapas de diferencias, PSNR y SSIM para el protocolo con referencia y registrar parámetros y semillas.
-7. Integrar el análisis visual comparativo y las advertencias sobre artefactos generativos.
-8. Construir la interfaz Gradio con intensidad ajustable, comparación y descarga.
-9. Ejecutar los experimentos controlados y con ruido real, documentar resultados verificables y actualizar las instrucciones de uso.
+### Fase 1 — Base del proyecto y prueba del modelo (etapa actual)
+
+- [x] Persona Julia definida y documentada.
+- [x] Proyecto, problema y alcance declarados.
+- [x] Repositorio creado, estructurado y publicado con historial de commits.
+- [x] Entorno Python 3.12 y uv funcionando.
+- [x] Modelo de difusión cargado y una imagen de prueba generada: ejecución real en CPU verificada el 11 de noviembre de 2026; entrada, salida y parámetros conservados en `outputs/prueba_diffusion/`.
+
+**Criterio de cierre:** cargar la revisión fijada de Stable Diffusion y guardar una salida no bloqueada por el filtro de seguridad, junto con la entrada preparada y sus parámetros. Esto no demuestra reducción de ruido.
+
+### Fase 2 — Ruido sintético controlado
+
+Conservar el archivo descargado y preparar una referencia de trabajo común. Agregar inicialmente ruido gaussiano con NumPy, con intensidad y semilla independientes de la semilla de difusión. Mostrar y exportar la referencia y la imagen ruidosa, manteniendo idénticas dimensiones, escala y canales. La referencia de trabajo será la imagen antes de agregar ruido, no una observación científica perfecta. Documentar normalización, saturación y parámetros; otros tipos de ruido quedan para después.
+
+**Criterio de cierre:** repetir la degradación con los mismos parámetros produce la misma imagen ruidosa y nunca modifica el archivo de origen.
+
+### Fase 3 — Limpieza experimental y comparación triple en Gradio
+
+Conectar la imagen ruidosa con difusión y mostrar **referencia preparada → imagen con ruido → salida procesada** en la misma pantalla. Permitir ajustar la intensidad, repetir semillas y descargar las imágenes y parámetros. Ofrecer también un modo para subir una imagen ya ruidosa: en ese caso no hay referencia limpia disponible y se muestran entrada y salida sin inventar una referencia.
+
+**Criterio de cierre:** una carga propia completa el recorrido hasta la salida, con comparación y explicación de qué operaciones se aplicaron. Evaluar si el modelo reduce ruido sin borrar o inventar demasiados detalles; si falla, revisar el modelo antes de afirmar que restaura.
+
+### Fase 4 — Análisis visual y honestidad
+
+Integrar CLIP ViT-B/32 de Hugging Face con descripciones fijas, comparar resultados de entrada y salida y explicar sus puntuaciones como afinidades relativas. Implementar el mapa de diferencias y avisos claros en `honesty.py`. Explicar las modificaciones en lenguaje comprensible y separar cambios observados de afirmaciones no verificables.
+
+**Criterio de cierre:** carga → difusión → análisis visual → resultados en una sola aplicación. CLIP no se usa como detector de detalles inventados ni como medida de calidad científica.
+
+### Fase 5 — Reproducibilidad y entrega académica
+
+Verificar el procedimiento desde una copia nueva y ejecutar el notebook en Colab con GPU disponible. Completar el README con modelos, revisiones, licencias, hardware realmente probado, capturas de uso, decisiones justificadas desde HAI, sección **Qué es real y qué es inventado**, limitaciones y participación del agente frente a las decisiones de la autora. Grabar la demo de cinco minutos con resultados reales.
+
+**Criterio de cierre:** otra persona puede seguir el README y completar el pipeline; están cubiertos los requisitos técnicos y documentales obligatorios. PSNR, SSIM, línea base clásica, historial, lotes y despliegue público se consideran mejoras opcionales posteriores.
