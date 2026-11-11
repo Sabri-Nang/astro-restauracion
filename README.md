@@ -6,7 +6,7 @@ Proyecto académico correspondiente al **Trabajo Integrador N.º 2** de la mater
 
 - **Sub-tarea seleccionada:** B — Eliminación de ruido y desenfoque (*denoising/deblurring*).
 - **Foco exclusivo del MVP:** reducción de ruido (*denoising*). La corrección de desenfoque queda fuera del alcance inicial.
-- **Estado actual:** estructura modular e interfaz Gradio informativa. La restauración, comparación, evaluación y análisis visual están **pendientes de implementación**.
+- **Estado actual:** estructura modular, interfaz Gradio con carga de imágenes y prueba de difusión imagen a imagen. La generación de ruido controlado, la evaluación de reducción de ruido y el análisis visual están **pendientes de implementación**. El checklist de esta etapa se detalla al final.
 - **Autora:** Sabrina Sanches, según los metadatos del proyecto.
 - **Repositorio central:** [astro-restauracion en GitHub](https://github.com/Sabri-Nang/astro-restauracion).
 
@@ -31,8 +31,8 @@ El proyecto busca estudiar hasta qué punto las transformaciones conservan la in
 - Evaluar un modelo preentrenado para reducción de ruido sin entrenar un modelo desde cero.
 - Permitir la carga de imágenes PNG o TIFF y el ajuste de la intensidad de restauración.
 - Facilitar la comparación entre imagen original y procesada mediante vistas antes/después, un deslizador y mapas de diferencias.
-- Calcular PSNR y SSIM cuando exista una referencia confiable.
-- Comparar el modelo con un filtro bilateral de OpenCV como línea base clásica.
+- Como mejora opcional, calcular PSNR y SSIM cuando exista una referencia confiable.
+- Como mejora opcional, comparar el modelo con un filtro bilateral de OpenCV como línea base clásica.
 - Incorporar un modelo de visión que analice ambas imágenes y describa modificaciones y posibles artefactos.
 - Comunicar las limitaciones del procesamiento generativo y favorecer experimentos reproducibles.
 
@@ -72,21 +72,23 @@ El proceso requiere tiempo y ajustes manuales para decidir cuánto ruido elimina
 
 Desde su computadora personal, después de una sesión de observación o mientras prepara material educativo, Julia cargaría una imagen previamente procesada y apilada, seleccionaría la intensidad y ejecutaría la restauración. Luego compararía ambas imágenes, consultaría el mapa de diferencias y revisaría el análisis visual y sus advertencias antes de decidir si comparte el resultado.
 
-Este recorrido describe la experiencia propuesta; todavía no está disponible en el código.
+Este recorrido describe la experiencia final propuesta. Actualmente está disponible una prueba técnica de imagen a imagen, sin generación de ruido controlado ni análisis visual.
 
 ## 4. Solución propuesta
 
 Se propone una aplicación web desarrollada en Gradio que integre carga de imágenes, restauración mediante difusión, comparación, evaluación y descarga del resultado.
 
-El candidato inicial es `stable-diffusion-v1-5/stable-diffusion-v1-5`, que se evaluaría mediante un pipeline de imagen a imagen (*image-to-image*) con intensidad baja. **No es un modelo especializado en restauración astronómica** y su utilidad para este problema debe demostrarse experimentalmente. Una intensidad baja no garantiza la conservación de las estructuras originales.
+El modelo de la prueba inicial es [`stable-diffusion-v1-5/stable-diffusion-v1-5`](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5), revisión fija `451f4fe16113bff5a5d2269ed5ad43b0592e9a14`, bajo licencia **CreativeML OpenRAIL-M**. Se utiliza `StableDiffusionImg2ImgPipeline` con scheduler DDIM, pesos `fp16` en formato Safetensors y precisión de ejecución `bfloat16` en CPU o `float16` en CUDA. Se emplea precisión reducida para limitar la memoria de los pesos; su rendimiento depende del hardware.
 
-La selección definitiva dependerá de la disponibilidad, licencia, compatibilidad con el entorno y resultados de evaluación. También está pendiente seleccionar el modelo de visión para el análisis comparativo.
+**No es un modelo especializado en restauración astronómica** y su utilidad para este problema debe demostrarse experimentalmente. El parámetro de intensidad controla la transformación generativa; no expresa directamente cuánto ruido astronómico se elimina. Una intensidad baja no garantiza la conservación de las estructuras originales. La primera prueba de carga e inferencia no equivale a validar el denoising.
+
+La adopción definitiva del modelo dependerá de los resultados de evaluación. Para cumplir el análisis visual obligatorio se prevé [`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32), arquitectura CLIP ViT-B/32, con licencia MIT del [proyecto CLIP](https://github.com/openai/CLIP/blob/main/LICENSE). Se compararán las afinidades de ambas imágenes con un conjunto fijo de descripciones. Su revisión y funcionamiento se validarán en la fase de análisis; todavía no está integrado. CLIP no genera descripciones libres ni verifica la autenticidad de una imagen.
 
 El análisis visual tendrá carácter descriptivo y exploratorio. Sus observaciones no equivaldrán a una verificación científica de las estructuras restauradas.
 
 ## 5. Funcionalidades previstas del MVP
 
-Todas las siguientes funcionalidades están **pendientes de implementación**:
+El alcance final comprende las funcionalidades siguientes. La prueba actual permite cargar PNG/TIFF de 8 bits, ajustar parámetros, ejecutar difusión y visualizar la entrada preparada y la salida en la misma pantalla. La eficacia de la reducción de ruido y las demás funciones todavía están pendientes de validación o implementación:
 
 - Cargar imágenes astronómicas PNG o TIFF.
 - Aplicar un modelo de difusión preentrenado de Hugging Face para reducción de ruido.
@@ -94,7 +96,7 @@ Todas las siguientes funcionalidades están **pendientes de implementación**:
 - Visualizar las imágenes original y restaurada.
 - Compararlas mediante un deslizador antes/después.
 - Generar mapas de diferencias.
-- Calcular métricas de calidad cuando exista una imagen de referencia confiable.
+- Como mejora opcional, calcular métricas de calidad cuando exista una imagen de referencia confiable.
 - Analizar las modificaciones mediante un modelo de visión con acceso a ambas imágenes.
 - Mostrar advertencias sobre posibles artefactos generativos.
 - Descargar la imagen procesada.
@@ -114,9 +116,11 @@ flowchart LR
     E --> F[Presentación en Gradio]
 ```
 
-Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. Los módulos de procesamiento contienen únicamente documentación de su responsabilidad; todavía no implementan funciones.
+Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `analysis.py` y `honesty.py` contienen únicamente documentación de su responsabilidad.
 
-El preprocesamiento deberá definir cómo manejar dimensiones, canales, profundidad de bits y normalización. Los mapas de diferencias requerirán imágenes comparables; PSNR y SSIM se calcularán contra una referencia confiable, no simplemente contra la entrada ruidosa. El modelo de visión recibirá la imagen original y la restaurada para describir cambios.
+La prueba admite PNG/TIFF de 8 bits por canal, convierte a RGB y reduce la imagen con LANCZOS sin recortar ni ampliar. Ajusta los lados a múltiplos de ocho y limita el mayor a 256 o 512 píxeles; el redondeo puede alterar ligeramente la relación de aspecto. Rechaza imágenes de alta profundidad para evitar una conversión silenciosa. El archivo de origen se conserva. Los futuros mapas y comparaciones utilizarán la misma imagen preparada como referencia, con dimensiones idénticas.
+
+Se verificaron las cabeceras de los seis TIFF descargados: `heic1702a.tif` tiene 16 bits por canal y requiere una copia de trabajo con conversión explícita antes de usar esta prueba. Los otros cinco tienen 8 bits por canal. El tratamiento de alta profundidad se definirá en la fase de preparación y ruido.
 
 ### Estructura real del repositorio
 
@@ -141,7 +145,7 @@ astro-restauracion/
     └── ejecutar_en_colab.ipynb
 ```
 
-Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye una interfaz informativa sin cargar modelos. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
+Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye la interfaz sin cargar modelos; la carga se realiza al solicitar una prueba. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. Los pesos se guardan en `.cache/huggingface/` y los resultados de consola en `outputs/`, ambos ignorados por Git. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
 ## 7. Tecnologías utilizadas y previstas
 
@@ -160,9 +164,10 @@ Las dependencias directas declaradas actualmente son:
 - `gradio>=6.31.0`
 - `numpy>=2.5.4`
 - `pillow>=12.3.0`
+- `torch>=2.15.0`
 - `transformers>=5.22.2`
 
-Estas declaraciones preparan el entorno; el código actual todavía no utiliza esas bibliotecas para procesar imágenes. **PyTorch (`torch`) está incluido en `uv.lock` como dependencia transitiva de Accelerate**, pero no está declarado como dependencia directa.
+PyTorch está declarado como dependencia directa. Pillow, PyTorch y Diffusers se utilizan en la prueba de procesamiento; Gradio integra la interfaz. Las versiones exactas están resueltas en `uv.lock`.
 
 ### Uso previsto
 
@@ -175,18 +180,18 @@ Estas declaraciones preparan el entorno; el código actual todavía no utiliza e
 - **Google Colab:** experimentos que requieran una GPU compatible.
 - **Visual Studio Code:** entorno principal de desarrollo.
 
-Se conservan la selección de Python, uv como gestor y las dependencias directas. Se retiraron el backend `uv_build` y el comando de consola del antiguo paquete para adoptar la estructura solicitada. La declaración directa de PyTorch y la incorporación de las bibliotecas faltantes deberán resolverse durante la implementación.
+Se conservan la selección de Python y uv como gestor. Se retiraron el backend `uv_build` y el comando de consola del antiguo paquete para adoptar la estructura solicitada. OpenCV y scikit-image solo serán necesarios si se implementan la línea base y las métricas opcionales.
 
 ## 8. Dataset y estrategia de evaluación
 
-Se prevé utilizar imágenes astronómicas reales de datasets públicos. **Todavía no se seleccionó ni incorporó un dataset al repositorio**. Quedan pendientes su procedencia, licencia, criterios de selección, formatos y condiciones de uso.
+Se seleccionaron seis imágenes de observaciones publicadas por ESA/Hubble. Sus archivos se conservan localmente y su procedencia, licencias y créditos se registran en el [README de ejemplos](assets/ejemplos/README.md). Son imágenes de divulgación ya procesadas, no datos crudos ni referencias científicas libres de ruido. Todavía falta definir y ejecutar el protocolo de evaluación sobre este conjunto.
 
 ### Evaluación controlada
 
 1. Seleccionar imágenes astronómicas de buena calidad como referencias.
 2. Agregar ruido artificial controlado, documentando su tipo, intensidad y semilla.
-3. Procesar las versiones ruidosas mediante difusión y mediante el filtro bilateral.
-4. Comparar los resultados con la referencia utilizando PSNR (*Peak Signal-to-Noise Ratio*), SSIM (*Structural Similarity Index*), mapas de diferencias e inspección visual de estrellas y estructuras difusas.
+3. Procesar las versiones ruidosas mediante difusión; opcionalmente, incorporar el filtro bilateral como línea base.
+4. Mostrar juntas la referencia preparada, la versión con ruido y la salida del modelo. Comenzar con inspección visual de estrellas y estructuras difusas y mapas de diferencias; opcionalmente calcular PSNR (*Peak Signal-to-Noise Ratio*) y SSIM (*Structural Similarity Index*).
 
 El ruido artificial se utilizará exclusivamente para evaluar la restauración; no implica generar imágenes astronómicas nuevas. Se deberá registrar la escala de valores empleada en las métricas y mantener condiciones comparables entre métodos. La evaluación controlada no garantiza que el comportamiento se generalice a todo ruido de adquisición real.
 
@@ -198,11 +203,11 @@ Sin una referencia confiable, no se reportarán PSNR o SSIM como evidencia de re
 
 ### Línea base clásica y reproducibilidad
 
-Se implementará un **filtro bilateral de OpenCV** para comparar un método tradicional con el modelo de difusión, sin asumir que la difusión ofrecerá mejores resultados.
+Como mejora opcional, se podrá implementar un **filtro bilateral de OpenCV** para comparar un método tradicional con el modelo de difusión, sin asumir que la difusión ofrecerá mejores resultados.
 
 Se prevé registrar imágenes de origen, degradaciones sintéticas, parámetros del filtro, identificador y revisión del modelo, intensidad de restauración, semillas, versiones y entorno de ejecución. Esto complementará el archivo de dependencias `uv.lock`.
 
-**No hay experimentos, métricas ni resultados de restauración disponibles en el repositorio actual.**
+**Todavía no hay una evaluación de reducción de ruido ni métricas de calidad.** La prueba técnica de inferencia se ejecutó y registra parámetros y salida localmente; no debe presentarse como un resultado de restauración validado.
 
 ## 9. Hardware y entorno de ejecución
 
@@ -220,7 +225,7 @@ Equipo disponible, según la información del proyecto:
 
 La GPU AMD no permite utilizar directamente una distribución de PyTorch destinada a GPU NVIDIA mediante CUDA. El soporte de aceleración AMD depende de la combinación de GPU, sistema operativo y versiones del entorno. La RX 580 no figura en la [matriz de compatibilidad de Radeon para PyTorch en Windows con ROCm 7.2.1](https://rocmdocs.amd.com/projects/radeon-ryzen/en/latest/docs/compatibility/compatibilityrad/windows/windows_compatibility.html); esta referencia no garantiza compatibilidad con otras versiones.
 
-El proyecto no incluye una configuración validada de aceleración para este equipo. Los 8 GB de VRAM no garantizan que un pipeline sea compatible o pueda ejecutarse con cualquier resolución. La inferencia en CPU queda pendiente de validación y podría resultar lenta; no hay tiempos de ejecución medidos.
+El proyecto no incluye una configuración validada de aceleración para este equipo. Los 8 GB de VRAM no garantizan que un pipeline sea compatible o pueda ejecutarse con cualquier resolución. Se completó una prueba en CPU con PyTorch `2.15.0+cpu` y precisión `bfloat16`: entrada preparada de 256 × 192 píxeles y dos pasos efectivos de DDIM. La inferencia midió 174,832 segundos y la carga con pesos ya descargados, 18,127 segundos. Son tiempos de esa ejecución, no una estimación general. Un intento inicial en `float32` falló por falta de memoria; la configuración final utiliza precisión reducida.
 
 El desarrollo principal se realizará localmente en VS Code, con GitHub como repositorio central. Para experimentos que requieran GPU se contempla Google Colab, sujeto a disponibilidad de recursos y compatibilidad de las versiones. El notebook `colab/ejecutar_en_colab.ipynb` incluye un procedimiento inicial de preparación, comprobación de CUDA y lanzamiento de la interfaz; su ejecución en Colab todavía no fue validada.
 
@@ -245,7 +250,19 @@ Ejecutar la aplicación desde la raíz:
 uv run --locked python app.py
 ```
 
-Gradio muestra una dirección local en la terminal. Abrirla en el navegador para consultar la pantalla inicial. Detener el servidor con `Ctrl+C`. La interfaz es informativa: no permite procesar imágenes ni carga modelos. El comando anterior `astro-restauracion` fue retirado al eliminar el paquete anidado.
+Gradio muestra una dirección local en la terminal. Abrirla en el navegador, subir un PNG o TIFF de 8 bits y pulsar **Ejecutar prueba de difusión**. La primera prueba descarga varios GB de pesos; las siguientes reutilizan la caché. Se muestran la entrada preparada, la salida generativa y los parámetros. Detener el servidor con `Ctrl+C`. El comando anterior `astro-restauracion` fue retirado al eliminar el paquete anidado.
+
+### Prueba técnica por consola
+
+Después de descargar `potw1803a.tif` según las instrucciones de ejemplos:
+
+```powershell
+uv run --locked python -m src.diffusion --input assets/ejemplos/originales/potw1803a.tif --output-dir outputs/prueba_diffusion --device cpu --steps 4 --strength 0.5 --size 256
+```
+
+Este comando solicita dos pasos efectivos con DDIM y guarda `entrada_preparada.png`, `salida.png` y `parametros.json`. Este último registra modelo, revisión, licencia, semilla, parámetros, dimensiones, SHA-256 de la entrada, versiones y tiempos medidos. Los archivos quedan excluidos de Git. La semilla facilita repetir el experimento en un entorno equivalente, sin garantizar igualdad bit a bit entre hardware o versiones distintas.
+
+La prueba usa una imagen publicada sin agregarle ruido artificial: verifica integración e inferencia. La evaluación de denoising será un experimento posterior. `--device auto` selecciona CUDA cuando está disponible y CPU en caso contrario; también se puede solicitar `--device cuda` en un entorno compatible.
 
 ### Verificación realizada
 
@@ -256,7 +273,11 @@ uv sync --locked --offline
 uv run --locked --offline python -c "from app import create_app; print(type(create_app()).__name__)"
 ```
 
-La sincronización respeta `uv.lock`; el segundo comando comprueba la construcción de la interfaz sin iniciar un servidor. La opción `--offline` requiere las dependencias en caché; esta comprobación no equivale a validar una instalación desde cero, la descarga de modelos ni la inferencia en GPU.
+La sincronización respeta `uv.lock`; el segundo comando comprueba la construcción de la interfaz sin iniciar un servidor. La opción `--offline` requiere las dependencias en caché; esta comprobación no equivale a validar una instalación desde cero ni la inferencia en GPU.
+
+El **11 de noviembre de 2026** se verificó además el comando de prueba técnica con `potw1803a.tif`, semilla 42, intensidad 0,5 y cuatro pasos configurados (dos efectivos). Se cargó la revisión fijada de Stable Diffusion 1.5 y se generó una salida de 256 × 192 píxeles sin bloqueo del filtro de seguridad. La ejecución utilizó Windows 11, Python 3.12.10, PyTorch 2.15.0 en CPU, Diffusers 0.42.1, Transformers 5.22.2 y Pillow 12.3.0.
+
+Los artefactos locales son [entrada preparada](outputs/prueba_diffusion/entrada_preparada.png), [salida de prueba](outputs/prueba_diffusion/salida.png) y [registro de parámetros](outputs/prueba_diffusion/parametros.json). No se publican en Git; esos enlaces solo funcionan después de ejecutar la prueba localmente. La entrada tiene SHA-256 `9bc563fef8171c749cc455ad9b0b140652cd26c28187eff4983686bf74f147a2`. La prueba usa una derivada de la imagen acreditada a **NASA, ESA, and J. Comerford (University of Colorado-Boulder)**; la conversión, el redimensionamiento y la salida generativa son modificaciones del proyecto. No se agregó ruido sintético ni se midió eficacia de restauración.
 
 ### Ejecución prevista en Colab
 
@@ -270,7 +291,7 @@ Abrir `colab/ejecutar_en_colab.ipynb` en Google Colab y ejecutar las celdas en o
 - Uso de un modelo de difusión preentrenado de Hugging Face.
 - Modelo de visión para análisis comparativo.
 - Comparación antes/después y mapas de diferencias.
-- Métricas de evaluación con referencia confiable.
+- Como mejora opcional, métricas de evaluación con referencia confiable.
 - Interfaz Gradio y descarga del resultado.
 - Documentación y reproducibilidad experimental.
 
@@ -297,8 +318,10 @@ La restauración visual y la verificación científica son tareas distintas. El 
 - Selección local de Python 3.12 y requisito de Python `>=3.12`.
 - Gestión con uv sin empaquetado instalable y archivo `uv.lock`.
 - Dependencias directas enumeradas en la sección de tecnologías.
-- Interfaz Gradio informativa construida por `create_app()` en `app.py`.
-- Módulos de difusión, análisis y diferencias preparados, sin procesamiento implementado.
+- Interfaz Gradio con subida de PNG/TIFF, parámetros y comparación de entrada preparada y salida.
+- Carga diferida de Stable Diffusion 1.5 con revisión fijada y prueba imagen a imagen.
+- Exportación por consola de entrada preparada, salida y parámetros reproducibles.
+- Módulos de análisis y diferencias preparados, sin procesamiento implementado.
 - Notebook inicial de Colab, pendiente de validación en ese entorno.
 - Instrucciones para agentes en `AGENTS.md` y registro previsto de permisos de imágenes.
 - Exclusión del entorno virtual y archivos generados mediante `.gitignore`.
@@ -306,10 +329,10 @@ La restauración visual y la verificación científica son tareas distintas. El 
 
 ### Pendiente de implementación o validación
 
-- Las funcionalidades de procesamiento del MVP, incluidos carga de imágenes, preprocesamiento, inferencia, comparación, análisis y métricas, y sus controles en la interfaz.
-- Selección de datasets y modelos definitivos.
-- Filtro bilateral y protocolo experimental reproducible.
-- Incorporación de OpenCV y scikit-image y revisión de la declaración de PyTorch.
+- Generación reproducible de ruido y comparación de referencia, imagen ruidosa y salida.
+- Evaluación de la eficacia de Stable Diffusion para este problema; no se garantiza que sea adecuado.
+- Análisis con CLIP y mapas de diferencias.
+- Filtro bilateral y métricas como mejoras opcionales.
 - Compatibilidad de ejecución local, uso de GPU y reutilización en Colab.
 - Pruebas del procesamiento y resultados experimentales.
 
