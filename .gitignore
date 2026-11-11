@@ -26,3 +26,5 @@ checkpoints/
 
 # Jupyter
 .ipynb_checkpoints/
+
+assets/ejemplos/originales/*.tif
