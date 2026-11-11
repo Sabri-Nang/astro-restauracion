@@ -8,3 +8,21 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Credenciales locales
+.env
+.env.*
+!.env.example
+.huggingface/
+
+# Cachés y pesos de modelos
+.cache/
+models/
+checkpoints/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+
+# Jupyter
+.ipynb_checkpoints/
