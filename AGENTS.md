@@ -7,11 +7,14 @@ Estas instrucciones se aplican a todo el repositorio.
 - Gestionar dependencias en `pyproject.toml` y actualizar `uv.lock` con uv.
 - Conservar `uv.lock` en el control de versiones.
 - Mantener la aplicación sin empaquetado instalable (`tool.uv.package = false`).
-- Ejecutar desde la raíz con `uv run --locked python app.py`.
+- Ejecutar desde la raíz con `uv run app.py`; para exigir el bloqueo usar
+  `uv run --locked python app.py`.
 - Mantener la interfaz en `app.py`, la difusión en `src/diffusion.py`, el análisis
   visual en `src/analysis.py` y diferencias y advertencias en `src/honesty.py`.
 - No cargar modelos ni descargar pesos al importar módulos.
 - Mantener el código reutilizable desde el notebook de `colab/`.
+- Usar `src/validation.py` para registrar las cinco pruebas técnicas de la etapa 2;
+  no confundirlas con una evaluación de reducción de ruido.
 - Limitar el MVP a reducción de ruido; desenfoque, FITS y superresolución quedan fuera.
 - Diferenciar funciones implementadas de planes; no inventar resultados ni métricas.
 - No presentar restauración visual ni análisis de IA como verificación científica.
