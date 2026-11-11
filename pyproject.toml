@@ -1,7 +1,7 @@
 [project]
 name = "astro-restauracion"
 version = "0.1.0"
-description = "Add your description here"
+description = "Restauración y análisis de imágenes astronómicas mediante inteligencia artificial"
 readme = "README.md"
 authors = [
     { name = "Sabrina Sanches", email = "sabrinadelosangelessanches@gmail.com" }
@@ -16,9 +16,5 @@ dependencies = [
     "transformers>=5.22.2",
 ]
 
-[project.scripts]
-astro-restauracion = "astro_restauracion:main"
-
-[build-system]
-requires = ["uv_build>=0.12.3,<0.13.0"]
-build-backend = "uv_build"
+[tool.uv]
+package = false
