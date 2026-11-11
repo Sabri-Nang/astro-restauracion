@@ -6,7 +6,7 @@ Proyecto académico correspondiente al **Trabajo Integrador N.º 2** de la mater
 
 - **Sub-tarea seleccionada:** B — Eliminación de ruido y desenfoque (*denoising/deblurring*).
 - **Foco exclusivo del MVP:** reducción de ruido (*denoising*). La corrección de desenfoque queda fuera del alcance inicial.
-- **Estado actual:** configuración inicial del paquete Python y comando de consola de prueba. Las funciones de restauración, evaluación e interfaz descritas en este documento están **planificadas**, salvo indicación expresa.
+- **Estado actual:** estructura modular e interfaz Gradio informativa. La restauración, comparación, evaluación y análisis visual están **pendientes de implementación**.
 - **Autora:** Sabrina Sanches, según los metadatos del proyecto.
 - **Repositorio central:** [astro-restauracion en GitHub](https://github.com/Sabri-Nang/astro-restauracion).
 
@@ -114,7 +114,7 @@ flowchart LR
     E --> F[Presentación en Gradio]
 ```
 
-Se prevé separar las responsabilidades de carga y preprocesamiento, inferencia, evaluación, análisis visual e interfaz para reutilizar el código localmente y en Google Colab. Los módulos concretos todavía no existen.
+Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. Los módulos de procesamiento contienen únicamente documentación de su responsabilidad; todavía no implementan funciones.
 
 El preprocesamiento deberá definir cómo manejar dimensiones, canales, profundidad de bits y normalización. Los mapas de diferencias requerirán imágenes comparables; PSNR y SSIM se calcularán contra una referencia confiable, no simplemente contra la entrada ruidosa. El modelo de visión recibirá la imagen original y la restaurada para describir cambios.
 
@@ -122,17 +122,25 @@ El preprocesamiento deberá definir cómo manejar dimensiones, canales, profundi
 
 ```text
 astro-restauracion/
+├── app.py
+├── AGENTS.md
 ├── .gitignore
 ├── .python-version
 ├── pyproject.toml
 ├── README.md
 ├── uv.lock
-└── src/
-    └── astro_restauracion/
-        └── __init__.py
+├── src/
+│   ├── diffusion.py
+│   ├── analysis.py
+│   └── honesty.py
+├── assets/
+│   └── ejemplos/
+│       └── README.md
+└── colab/
+    └── ejecutar_en_colab.ipynb
 ```
 
-Existe además un entorno local `.venv/`, excluido del control de versiones. El único archivo Python del proyecto es `src/astro_restauracion/__init__.py`, cuya función `main()` imprime un saludo.
+Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye una interfaz informativa sin cargar modelos. `assets/ejemplos/README.md` conserva la carpeta en Git y define cómo documentar los permisos de las futuras imágenes; todavía no contiene imágenes. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
 ## 7. Tecnologías utilizadas y previstas
 
@@ -140,8 +148,8 @@ Existe además un entorno local `.venv/`, excluido del control de versiones. El 
 
 - **Python:** `.python-version` selecciona `3.12`; `pyproject.toml` declara `requires-python = ">=3.12"`.
 - **uv:** gestión del entorno y las dependencias, con versiones resueltas en `uv.lock`.
-- **Empaquetado:** backend `uv_build>=0.12.3,<0.13.0`.
-- **Paquete:** `astro-restauracion`, versión `0.1.0`, importable como `astro_restauracion`.
+- **Modalidad:** aplicación sin empaquetado instalable, con `tool.uv.package = false`.
+- **Proyecto:** `astro-restauracion`, versión `0.1.0`; punto de entrada `app.py`.
 - **Control de versiones:** Git y remoto de GitHub configurado.
 
 Las dependencias directas declaradas actualmente son:
@@ -166,7 +174,7 @@ Estas declaraciones preparan el entorno; el código actual todavía no utiliza e
 - **Google Colab:** experimentos que requieran una GPU compatible.
 - **Visual Studio Code:** entorno principal de desarrollo.
 
-La configuración de Python y uv se conserva sin cambios. La declaración directa de PyTorch y la incorporación de las bibliotecas faltantes deberán resolverse durante la implementación.
+Se conservan la selección de Python, uv como gestor y las dependencias directas. Se retiraron el backend `uv_build` y el comando de consola del antiguo paquete para adoptar la estructura solicitada. La declaración directa de PyTorch y la incorporación de las bibliotecas faltantes deberán resolverse durante la implementación.
 
 ## 8. Dataset y estrategia de evaluación
 
@@ -213,7 +221,7 @@ La GPU AMD no permite utilizar directamente una distribución de PyTorch destina
 
 El proyecto no incluye una configuración validada de aceleración para este equipo. Los 8 GB de VRAM no garantizan que un pipeline sea compatible o pueda ejecutarse con cualquier resolución. La inferencia en CPU queda pendiente de validación y podría resultar lenta; no hay tiempos de ejecución medidos.
 
-El desarrollo principal se realizará localmente en VS Code, con GitHub como repositorio central. Para experimentos que requieran GPU se contempla Google Colab, sujeto a disponibilidad de recursos y compatibilidad de las versiones. Todavía no hay notebooks ni un procedimiento de ejecución en Colab incorporados al repositorio.
+El desarrollo principal se realizará localmente en VS Code, con GitHub como repositorio central. Para experimentos que requieran GPU se contempla Google Colab, sujeto a disponibilidad de recursos y compatibilidad de las versiones. El notebook `colab/ejecutar_en_colab.ipynb` incluye un procedimiento inicial de preparación, comprobación de CUDA y lanzamiento de la interfaz; su ejecución en Colab todavía no fue validada.
 
 ## 10. Instalación y ejecución
 
@@ -229,19 +237,13 @@ Desde la raíz del repositorio, sincronizar el entorno respetando el archivo de 
 uv sync --locked
 ```
 
-Ejecutar el punto de entrada definido en `pyproject.toml`:
+Ejecutar la aplicación desde la raíz:
 
 ```powershell
-uv run --locked astro-restauracion
+uv run --locked python app.py
 ```
 
-Salida actual esperada:
-
-```text
-Hello from astro-restauracion!
-```
-
-Este comando ejecuta únicamente la función inicial de prueba: todavía no inicia una interfaz Gradio ni carga modelos.
+Gradio muestra una dirección local en la terminal. Abrirla en el navegador para consultar la pantalla inicial. Detener el servidor con `Ctrl+C`. La interfaz es informativa: no permite procesar imágenes ni carga modelos. El comando anterior `astro-restauracion` fue retirado al eliminar el paquete anidado.
 
 ### Verificación realizada
 
@@ -249,10 +251,14 @@ En el entorno local existente, con uv `0.12.3`, se verificaron satisfactoriament
 
 ```powershell
 uv sync --locked --offline
-uv run --locked --offline astro-restauracion
+uv run --locked --offline python -c "from app import create_app; print(type(create_app()).__name__)"
 ```
 
-La sincronización respetó `uv.lock` y la ejecución produjo el saludo mostrado. La opción `--offline` requiere las dependencias en caché; esta comprobación no equivale a validar una instalación desde cero, la descarga de modelos ni la inferencia en GPU.
+La sincronización respeta `uv.lock`; el segundo comando comprueba la construcción de la interfaz sin iniciar un servidor. La opción `--offline` requiere las dependencias en caché; esta comprobación no equivale a validar una instalación desde cero, la descarga de modelos ni la inferencia en GPU.
+
+### Ejecución prevista en Colab
+
+Abrir `colab/ejecutar_en_colab.ipynb` en Google Colab y ejecutar las celdas en orden. El notebook clona la versión disponible en GitHub, instala uv y sincroniza el entorno con Python 3.12. Los cambios locales deberán publicarse antes de que el notebook pueda utilizarlos. La última celda solicita un enlace público temporal de Gradio; detenerla al terminar. No se realizó ninguna publicación automática ni se validó este procedimiento en Colab.
 
 ## 11. Alcance y limitaciones
 
@@ -284,18 +290,21 @@ La restauración visual y la verificación científica son tareas distintas. El 
 
 ### Implementado o configurado
 
-- Estructura inicial de paquete bajo `src/astro_restauracion/`.
+- Estructura con `app.py`, los tres módulos de `src/`, `assets/ejemplos/` y `colab/`.
 - Metadatos de versión y autoría en `pyproject.toml`.
 - Selección local de Python 3.12 y requisito de Python `>=3.12`.
-- Gestión con uv, backend `uv_build` y archivo `uv.lock`.
+- Gestión con uv sin empaquetado instalable y archivo `uv.lock`.
 - Dependencias directas enumeradas en la sección de tecnologías.
-- Comando `astro-restauracion`, que imprime un saludo.
+- Interfaz Gradio informativa construida por `create_app()` en `app.py`.
+- Módulos de difusión, análisis y diferencias preparados, sin procesamiento implementado.
+- Notebook inicial de Colab, pendiente de validación en ese entorno.
+- Instrucciones para agentes en `AGENTS.md` y registro previsto de permisos de imágenes.
 - Exclusión del entorno virtual y archivos generados mediante `.gitignore`.
 - Remoto GitHub configurado.
 
 ### Pendiente de implementación o validación
 
-- Todas las funcionalidades del MVP, incluidos carga de imágenes, preprocesamiento, inferencia, comparación, análisis, métricas e interfaz.
+- Las funcionalidades de procesamiento del MVP, incluidos carga de imágenes, preprocesamiento, inferencia, comparación, análisis y métricas, y sus controles en la interfaz.
 - Selección de datasets y modelos definitivos.
 - Filtro bilateral y protocolo experimental reproducible.
 - Incorporación de OpenCV y scikit-image y revisión de la declaración de PyTorch.
@@ -304,9 +313,7 @@ La restauración visual y la verificación científica son tareas distintas. El 
 
 ### Observaciones de consistencia
 
-El README previo estaba vacío y no contenía información técnica que conservar. Se mantuvieron los nombres reales del paquete y del comando, los metadatos existentes y la configuración de Python y uv.
-
-El nombre público **AstroRestore AI** convive con el nombre técnico `astro-restauracion` sin renombrar el paquete. La descripción de `pyproject.toml` conserva el texto inicial `Add your description here`, por lo que aún no refleja el objetivo documentado. Esta actualización solo modifica el README.
+El nombre público **AstroRestore AI** convive con el nombre técnico del proyecto `astro-restauracion`. Se eliminó el antiguo paquete `src/astro_restauracion/` y su comando de saludo para adoptar la disposición solicitada. Se preservaron autoría, versión, selección de Python y dependencias directas; la descripción de `pyproject.toml` ahora refleja el objetivo del proyecto. El archivo `uv.lock` se actualizó para representar la aplicación sin empaquetado.
 
 ## 13. Próximas etapas
 
