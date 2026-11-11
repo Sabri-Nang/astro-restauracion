@@ -135,12 +135,13 @@ astro-restauracion/
 │   └── honesty.py
 ├── assets/
 │   └── ejemplos/
-│       └── README.md
+│       ├── README.md
+│       └── originales/
 └── colab/
     └── ejecutar_en_colab.ipynb
 ```
 
-Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye una interfaz informativa sin cargar modelos. `assets/ejemplos/README.md` conserva la carpeta en Git y define cómo documentar los permisos de las futuras imágenes; todavía no contiene imágenes. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
+Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye una interfaz informativa sin cargar modelos. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
 ## 7. Tecnologías utilizadas y previstas
 
@@ -229,6 +230,7 @@ El desarrollo principal se realizará localmente en VS Code, con GitHub como rep
 
 - Python 3.12 para reproducir la versión seleccionada en `.python-version`.
 - uv disponible en la terminal.
+- Para utilizar las imágenes de ejemplo, descargar los TIFF manualmente según la [documentación de ejemplos](assets/ejemplos/README.md). No están incluidos en Git ni se requiere Git LFS.
 - Una copia del repositorio y acceso a las dependencias, mediante red o caché local.
 
 Desde la raíz del repositorio, sincronizar el entorno respetando el archivo de bloqueo:
