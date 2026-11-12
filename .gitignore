@@ -31,3 +31,6 @@ assets/ejemplos/originales/*.tif
 
 # Salidas locales de las pruebas
 outputs/
+
+# Registros locales de ejecución
+logs/
