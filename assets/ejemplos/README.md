@@ -33,6 +33,18 @@ en GitHub se deben utilizar los enlaces a las fichas de origen.
 
 ## Condiciones comunes de uso y conservación
 
+### Derivadas de comparación de la etapa 3
+
+Se generaron mapas de diferencias para las cinco imágenes de la validación
+técnica de etapa 2, sin ejecutar nuevas inferencias ni alterar los originales.
+Se guardan localmente en `outputs/etapa3/comparacion/<identificador>_diferencias.png`,
+conservando el identificador que vincula cada mapa con su fuente, licencia y
+atribución en el registro anterior. Cada mapa representa la media RGB de la
+diferencia absoluta entre `entrada_preparada.png` y `salida.png`, redondeada a
+8 bits y con escala fija de 0 a 255. Al compartirlo, indicar esta transformación
+y acompañarlo del crédito y los enlaces de la imagen correspondiente. Estos
+mapas muestran cambios, no resultados de reducción de ruido ni autenticidad.
+
 - Presentar el crédito completo de cada imagen de forma visible y asociado a
   ella; al publicarlo en línea, incluir el enlace a la fuente y a la licencia.
 - Indicar las modificaciones al generar versiones derivadas, sin sugerir

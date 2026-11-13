@@ -6,7 +6,7 @@ Proyecto académico correspondiente al **Trabajo Integrador N.º 2** de la mater
 
 - **Sub-tarea seleccionada:** B — Eliminación de ruido y desenfoque (*denoising/deblurring*).
 - **Foco exclusivo del MVP:** reducción de ruido (*denoising*). La corrección de desenfoque queda fuera del alcance inicial.
-- **Estado actual:** estructura modular, interfaz Gradio con carga de imágenes y prueba de difusión imagen a imagen. La generación de ruido controlado, la evaluación de reducción de ruido y el análisis visual están **pendientes de implementación**. El checklist de esta etapa se detalla al final.
+- **Estado actual:** estructura modular, interfaz Gradio con carga de imágenes, prueba de difusión imagen a imagen, deslizador de comparación y mapa de diferencias. La generación de ruido controlado, la evaluación de reducción de ruido y el análisis visual con un modelo están **pendientes de implementación**. El checklist de esta etapa se detalla al final.
 - **Autora:** Sabrina Sanches, según los metadatos del proyecto.
 - **Repositorio central:** [astro-restauracion en GitHub](https://github.com/Sabri-Nang/astro-restauracion).
 
@@ -88,7 +88,7 @@ El análisis visual tendrá carácter descriptivo y exploratorio. Sus observacio
 
 ## 5. Funcionalidades previstas del MVP
 
-El alcance final comprende las funcionalidades siguientes. La prueba actual permite cargar PNG/TIFF de 8 bits, ajustar parámetros, ejecutar difusión y visualizar la entrada preparada y la salida en la misma pantalla. La eficacia de la reducción de ruido y las demás funciones todavía están pendientes de validación o implementación:
+El alcance final comprende las funcionalidades siguientes. La prueba actual permite cargar PNG/TIFF de 8 bits, ajustar parámetros, ejecutar difusión, visualizar la entrada preparada y la salida, compararlas mediante un deslizador y consultar el mapa de diferencias. La eficacia de la reducción de ruido, el análisis con un modelo de visión y la exportación explícita con parámetros siguen pendientes de validación o implementación:
 
 - Cargar imágenes astronómicas PNG o TIFF.
 - Aplicar un modelo de difusión preentrenado de Hugging Face para reducción de ruido.
@@ -116,9 +116,11 @@ flowchart LR
     E --> F[Presentación en Gradio]
 ```
 
-Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `analysis.py` y `honesty.py` contienen únicamente documentación de su responsabilidad.
+Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `src/honesty.py` calcula el mapa de diferencias y centraliza las advertencias. `src/analysis.py` contiene únicamente documentación de su responsabilidad; el análisis visual con un modelo todavía está pendiente.
 
-La prueba admite PNG/TIFF de 8 bits por canal, convierte a RGB y reduce la imagen con LANCZOS sin recortar ni ampliar. Ajusta los lados a múltiplos de ocho y limita el mayor a 256 o 512 píxeles; el redondeo puede alterar ligeramente la relación de aspecto. Rechaza imágenes de alta profundidad para evitar una conversión silenciosa. El archivo de origen se conserva. Los futuros mapas y comparaciones utilizarán la misma imagen preparada como referencia, con dimensiones idénticas.
+La prueba admite PNG/TIFF de 8 bits por canal, convierte a RGB y reduce la imagen con LANCZOS sin recortar ni ampliar. Ajusta los lados a múltiplos de ocho y limita el mayor a 256 o 512 píxeles; el redondeo puede alterar ligeramente la relación de aspecto. Rechaza imágenes de alta profundidad para evitar una conversión silenciosa. El archivo de origen se conserva. El deslizador y el mapa comparan esa entrada preparada con la salida, con dimensiones idénticas.
+
+El mapa en escala de grises calcula, por píxel, la media de las diferencias absolutas de los tres canales RGB y la redondea a 8 bits. Usa enteros con signo para evitar desbordamientos y una escala fija de 0 a 255, sin amplificar el contraste por imagen: negro significa ausencia de cambios y blanco, diferencia máxima. Rechaza modos distintos de RGB y tamaños diferentes, sin convertir ni redimensionar silenciosamente. No distingue ruido eliminado, detalles perdidos o estructuras inventadas y no mide la eficacia del denoising. Los componentes de comparación se entregan en PNG para evitar pérdidas de compresión.
 
 Se verificaron las cabeceras de los seis TIFF descargados: `heic1702a.tif` tiene 16 bits por canal y requiere una copia de trabajo con conversión explícita antes de usar esta prueba. Los otros cinco tienen 8 bits por canal. El tratamiento de alta profundidad se definirá en la fase de preparación y ruido.
 
@@ -145,6 +147,8 @@ astro-restauracion/
 └── colab/
     └── ejecutar_en_colab.ipynb
 ```
+
+Las comprobaciones de diferencias e integración están en `tests/test_honesty.py`. Se ejecutan desde la raíz con `uv run --locked python -m unittest discover -s tests -v`; no descargan pesos ni ejecutan inferencias. Son independientes de las cinco pruebas técnicas de etapa 2 registradas por `src/validation.py`.
 
 Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye la interfaz sin cargar modelos; la carga se realiza al solicitar una prueba. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. Los pesos se guardan en `.cache/huggingface/`, las imágenes y parámetros de las pruebas en `outputs/` y todos los archivos `.log` del proyecto en `logs/`. Las tres carpetas están ignoradas por Git. Guardar los nuevos registros de ejecución en `logs/`. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
@@ -364,7 +368,8 @@ La restauración visual y la verificación científica son tareas distintas. El 
 - Interfaz Gradio con subida de PNG/TIFF, parámetros y comparación de entrada preparada y salida.
 - Carga diferida de Stable Diffusion 1.5 con revisión fijada y prueba imagen a imagen.
 - Exportación por consola de entrada preparada, salida y parámetros reproducibles.
-- Módulos de análisis y diferencias preparados, sin procesamiento implementado.
+- Deslizador de comparación y mapa de diferencias absolutas entre entrada preparada y salida; advertencia explícita de reconstrucción por IA.
+- Módulo de análisis preparado, sin procesamiento implementado.
 - Notebook de Colab con una prueba GPU registrada por la autora y acceso a Gradio desde el enlace público confirmado por ella.
 - Instrucciones para agentes en `AGENTS.md` y registro previsto de permisos de imágenes.
 - Exclusión del entorno virtual y archivos generados mediante `.gitignore`.
@@ -374,7 +379,7 @@ La restauración visual y la verificación científica son tareas distintas. El 
 
 - Generación reproducible de ruido y comparación de referencia, imagen ruidosa y salida.
 - Evaluación de la eficacia de Stable Diffusion para este problema; no se garantiza que sea adecuado.
-- Análisis con CLIP y mapas de diferencias.
+- Análisis con CLIP.
 - Filtro bilateral y métricas como mejoras opcionales.
 - Compatibilidad de ejecución local, uso de GPU y reutilización en Colab.
 - Pruebas del procesamiento y resultados experimentales.
@@ -411,7 +416,7 @@ Las fechas siguientes corresponden al cronograma propuesto por el docente. Las v
 
 **Entregable:** aplicación que procesa imágenes mediante `uv run app.py`, ejecución alternativa en Colab y resultados reproducibles de las cinco pruebas mediante `src/validation.py`.
 
-### Etapa 3 — Análisis visual y honestidad (10–13 de noviembre) — pendiente
+### Etapa 3 — Análisis visual y honestidad (10–13 de noviembre) — en desarrollo
 
 La prioridad es integrar CLIP ViT-B/32 y un informe comprensible para Julia. El informe combinará las afinidades con descripciones fijas y una explicación de los parámetros aplicados, sin atribuir a CLIP capacidad para certificar autenticidad o describir por sí solo todos los cambios.
 
@@ -419,7 +424,9 @@ La prioridad es integrar CLIP ViT-B/32 y un informe comprensible para Julia. El 
 - [ ] Mostrar un informe en lenguaje natural y comunicar sus límites.
 - [ ] Documentar ejemplos reales de aciertos y de fallos o alteraciones de estructuras.
 - [x] Mantener elementos de honestidad ya disponibles: comparación, control de intensidad y advertencias de reconstrucción.
-- [ ] Incorporar, si aporta claridad, un mapa de diferencias en `honesty.py`.
+- [x] Incorporar un mapa de diferencias en `honesty.py`, deslizador en Gradio y advertencias sobre la reconstrucción por IA.
+
+**Primer paso implementado:** comparación sobre imágenes RGB del mismo tamaño, mapa de escala fija y advertencias centralizadas. Las pruebas automatizadas usan valores conocidos y una salida simulada para comprobar la integración sin inferencia. Esto no cierra la etapa 3 ni acredita reducción de ruido. Continúan pendientes el experimento controlado, la decisión sobre ControlNet Tile si el modelo altera demasiado las estructuras, la integración de CLIP y la descarga explícita con parámetros. El notebook de Colab puede reutilizar `difference_map` desde `src.honesty`; no se modificó todavía su recorrido experimental.
 
 **Experimento acotado de ruido:** conservar el TIFF y preparar una referencia común; agregar inicialmente un nivel de ruido gaussiano con NumPy y una semilla propia. Procesar esa versión manteniendo fija la semilla del modelo y comparar **referencia preparada → imagen ruidosa → salida procesada**. Registrar dimensiones, canales, normalización, saturación y parámetros. Cambiar un parámetro por vez al explorar pasos e intensidad. Esto evalúa el modelo preentrenado; no lo entrena. La referencia publicada no es una observación científica perfecta y el ruido sintético no representa todo ruido real.
 
