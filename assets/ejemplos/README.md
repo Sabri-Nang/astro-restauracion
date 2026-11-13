@@ -78,6 +78,25 @@ científica de una futura salida generativa.
 
 ## Incorporación de nuevas imágenes
 
+### Revisión del ensayo guardado en Colab
+
+Se revisaron las vistas guardadas en el
+[notebook compartido](https://colab.research.google.com/drive/1iuKBK8DO_-ZDcP_MiUfW5TyaFHTRQOr9).
+La comparación y el mapa corresponden a `potw1803a.tif` con los mismos créditos
+y condiciones indicados en el ensayo anterior. Se conservaron localmente en
+`outputs/revision_colab_gaussiano/`; `diferencias_x16.png` es una derivada del mapa
+absoluto multiplicada por 16 y recortada a 255, únicamente para visualizarla.
+No se amplificaron la referencia ni la imagen con ruido. El notebook guardado
+indica que se omitió difusión; estas vistas no representan una restauración.
+
+### Nuevas imágenes del laboratorio
+
 Agregar una fila por imagen con nombre y ubicación del archivo, descripción,
 formato y dimensiones, fuente y enlace de origen, autoría y atribución completa,
 licencia o permiso y modificaciones realizadas, si corresponde.
+
+El laboratorio permite cargar archivos propios sin un hash de ejemplo fijo.
+Solicita fuente, crédito y licencia o permiso declarados y los guarda en el
+registro de la ejecución; no los valida automáticamente. Comprobar esa información
+antes de compartir imágenes o ZIP. Los archivos de ensayo quedan en `outputs/`,
+excluidos de Git.

@@ -211,7 +211,7 @@ flowchart LR
     E --> F[Presentación en Gradio]
 ```
 
-Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `src/honesty.py` calcula el mapa de diferencias y centraliza las advertencias. `src/noise.py` genera ruido gaussiano y `src/experiment.py` prepara el ensayo y ejecuta su restauración bajo petición. `src/analysis.py` contiene únicamente documentación de su responsabilidad; el análisis visual con un modelo todavía está pendiente.
+Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `src/honesty.py` calcula el mapa absoluto, su amplificación visual opcional y centraliza las advertencias. `laboratorio.py` contiene una interfaz experimental independiente; la interfaz de Julia permanece en `app.py`. `src/noise.py` genera ruido gaussiano y `src/experiment.py` prepara el ensayo y ejecuta su restauración bajo petición. `src/analysis.py` contiene únicamente documentación de su responsabilidad; el análisis visual con un modelo todavía está pendiente.
 
 La prueba admite PNG/TIFF de 8 bits por canal, convierte a RGB y reduce la imagen con LANCZOS sin recortar ni ampliar. Ajusta los lados a múltiplos de ocho y limita el mayor a 256 o 512 píxeles; el redondeo puede alterar ligeramente la relación de aspecto. Rechaza imágenes de alta profundidad para evitar una conversión silenciosa. El archivo de origen se conserva. El deslizador y el mapa comparan esa entrada preparada con la salida, con dimensiones idénticas.
 
@@ -224,6 +224,7 @@ Se verificaron las cabeceras de los seis TIFF descargados: `heic1702a.tif` tiene
 ```text
 astro-restauracion/
 ├── app.py
+├── laboratorio.py
 ├── AGENTS.md
 ├── .gitignore
 ├── .python-version
@@ -243,13 +244,15 @@ astro-restauracion/
 │       └── originales/
 ├── tests/
 │   ├── test_honesty.py
-│   └── test_noise.py
+│   ├── test_noise.py
+│   └── test_laboratorio.py
 └── colab/
     ├── ejecutar_en_colab.ipynb
-    └── experimento_ruido_gaussiano.ipynb
+    ├── experimento_ruido_gaussiano.ipynb
+    └── laboratorio_ruido.ipynb
 ```
 
-Las comprobaciones de diferencias e integración están en `tests/test_honesty.py`; el ruido, sus estadísticas, recorte y registros se comprueban en `tests/test_noise.py`. Se ejecutan desde la raíz con `uv run --locked python -m unittest discover -s tests -v`; no descargan pesos ni ejecutan inferencias. Son independientes de las cinco pruebas técnicas de etapa 2 registradas por `src/validation.py`.
+Las comprobaciones de diferencias e integración están en `tests/test_honesty.py`; el ruido, sus estadísticas, recorte y registros se comprueban en `tests/test_noise.py`. Se ejecutan desde la raíz con `uv run --locked python -m unittest discover -s tests -v`; no descargan pesos ni ejecutan inferencias. El laboratorio y la ganancia visual se comprueban en `tests/test_laboratorio.py`. Estas pruebas son independientes de las cinco ejecuciones técnicas de etapa 2 registradas por `src/validation.py`.
 
 Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye la interfaz sin cargar modelos; la carga se realiza al solicitar una prueba. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. Los pesos se guardan en `.cache/huggingface/`, las imágenes y parámetros de las pruebas en `outputs/` y todos los archivos `.log` del proyecto en `logs/`. Las tres carpetas están ignoradas por Git. Guardar los nuevos registros de ejecución en `logs/`. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
@@ -325,7 +328,7 @@ Las capturas del recorrido se incorporarán al completar la revisión visual de 
 
 ### Paso 2 de etapa 3: ensayo gaussiano
 
-Abrir el [notebook de ruido gaussiano](colab/experimento_ruido_gaussiano.ipynb). Mantiene dos fases separadas: primero genera y muestra la referencia y la entrada ruidosa sin IA; después permite ejecutar difusión expresamente. No cambia todavía los controles de la app Gradio. La preparación y las pruebas son livianas; la inferencia se reserva para Colab con CUDA.
+Abrir el [notebook de ruido gaussiano](colab/experimento_ruido_gaussiano.ipynb). Mantiene dos fases separadas: primero genera y muestra la referencia y la entrada ruidosa sin IA; después permite ejecutar difusión expresamente. El notebook inicial conserva su recorrido fijo; para otras imágenes y control interactivo se agregó el laboratorio separado descrito a continuación. La preparación y las pruebas son livianas; la inferencia se reserva para Colab con CUDA.
 
 Para preparar el mismo ensayo desde la raíz, sin descargar ni cargar modelos:
 
@@ -350,6 +353,27 @@ En el notebook, la celda de difusión está desactivada por defecto mediante `EJ
 La restauración guarda `salida.png`, `comparacion_triple.png`, dos mapas y `resultado.json` con el registro original y los parámetros del modelo. El mapa **ruido–salida** muestra modificaciones del modelo; **referencia–salida** muestra diferencias frente al objetivo sintético. Ninguno determina autenticidad. No se calculan métricas automáticamente.
 
 **Verificación realizada:** se generó localmente el par de `potw1803a.tif` a 256 × 192 y se inspeccionó su comparación. Se observa más grano en el fondo; no se ejecutó difusión sobre esta degradación. El original y sus créditos se conservan; las nuevas derivadas se documentan en el [registro de ejemplos](assets/ejemplos/README.md). Las pruebas automatizadas cubren reproducibilidad, sigma cero, estadística en una imagen sintética uniforme, recorte, preservación del original y rechazo de entradas modificadas, además de una restauración simulada. No son resultados de denoising.
+
+### Laboratorio Gradio independiente de la app de Julia
+
+El [notebook del laboratorio](colab/laboratorio_ruido.ipynb) inicia una interfaz separada definida en `laboratorio.py`. No modifica el recorrido ni los controles de `app.py` y no requiere una imagen ni un SHA-256 de ejemplo fijo.
+
+Para abrirlo localmente desde la raíz:
+
+```powershell
+uv run --locked python laboratorio.py
+```
+
+Generar y examinar el ruido es liviano; se recomienda Colab con GPU para difusión. En Colab, ejecutar las celdas del notebook de laboratorio y abrir su enlace público temporal. La celda del servidor debe permanecer activa. El clon necesita los módulos publicados; en una sesión previa, interrumpir el servidor, actualizar con `git pull --ff-only origin main` y volver a iniciarlo. No se publican cambios automáticamente.
+
+1. Subir un PNG o TIFF de 8 bits propio. El panel de original y procedencia muestra la imagen en RGB sin reducir y permite indicar fuente, crédito y licencia declarados. Las mismas restricciones de profundidad y tamaño mínimo de `prepare_image` se mantienen.
+2. Ajustar sigma (0–0,2), semilla del ruido y lado máximo (256 o 512). El ruido se actualiza con el control, sin ejecutar difusión. Se muestran la referencia preparada y su copia ruidosa; cualquier salida anterior se descarta al cambiar imagen, sigma, semilla o tamaño.
+3. Pulsar **Aplicar difusión a la copia ruidosa** para cargar y ejecutar el modelo. Se procesa la misma copia mostrada, verificada antes de inferir. CUDA es explícita y no cambia silenciosamente a CPU. Durante inferencia conviene esperar antes de mover controles; la cola serializa las operaciones para conservar la correspondencia entre vistas.
+4. Comparar **referencia preparada → ruido → salida**. El comparador muestra referencia/ruido antes de inferir y ruido/salida después. Los parámetros de la última ejecución quedan registrados.
+5. Elegir el par del mapa: referencia/ruido, ruido/salida o referencia/salida. Se presentan el mapa absoluto de escala fija y una vista multiplicada por una ganancia entre 1 y 64, con recorte a 255. La ganancia modifica solo la presentación; no regenera ruido, no ejecuta difusión y no cambia las imágenes ni el mapa absoluto. Se muestran mínimo, máximo, media y fracciones de píxeles no nulos y recortados. Son estadísticas descriptivas del mapa redondeado, no métricas de calidad de restauración.
+6. Descargar el ZIP después de inferir. Incluye referencia, ruido, salida, mapas absolutos y los registros. Las carpetas únicas de cada ejecución quedan en `outputs/laboratorio/`; no se sobrescriben ensayos ni se publica la procedencia declarada automáticamente.
+
+**Verificación:** 23 pruebas automatizadas aprobadas, incluyendo cambios de sigma, limpieza de resultados anteriores, protección frente a una entrada desactualizada, ganancia visual y ZIP, con difusión simulada. También se comprobó el servidor real por HTTP con subida de imagen sintética, sigma cero, cambio de ganancia y limpieza de vistas. No se ejecutó inferencia real para verificar estos cambios ni se realizó todavía una revisión visual del laboratorio en el navegador de Colab.
 
 ### Ensayos posteriores solicitados — todavía no implementados
 
@@ -562,6 +586,14 @@ Tecnicatura Superior en Ciencia de Datos e Inteligencia Artificial · IFTS 24. M
 **Imágenes:** los originales de ESA/Hubble y sus derivadas deben conservar las atribuciones, enlaces y condiciones documentadas en el [registro de ejemplos](assets/ejemplos/README.md); allí se identifica CC BY 4.0 según las condiciones de la fuente. No se versionan TIFF originales, pesos, credenciales ni resultados locales.
 
 ## Evidencias técnicas y evaluación
+
+### Revisión de resultados guardados en Colab
+
+Se revisó el [ensayo compartido](https://colab.research.google.com/drive/1iuKBK8DO_-ZDcP_MiUfW5TyaFHTRQOr9#scrollTo=difusion-gaussiano). El notebook guardado usa la revisión `d049aa3`, sigma 0,03, semilla de ruido 123 y referencia de 256 × 192. La celda de difusión conserva `EJECUTAR_DIFUSION = False` y su salida registra **Difusión omitida**. Por lo tanto, esas salidas no permiten evaluar eficacia de restauración ni comportamiento del modelo.
+
+En la comparación guardada se aprecia más grano, especialmente en el fondo. El mapa referencia–ruido es oscuro, pero no está vacío: mínimo 0, máximo 18, media 5,42155 y 49.067 de 49.152 píxeles del mapa con valores no nulos. Estas cantidades corresponden a la media RGB absoluta redondeada a 8 bits. Su baja intensidad en escala 0–255 explica el aspecto casi negro; no indica que las imágenes sean iguales. Las fracciones de muestras RGB recortadas por el generador fueron aproximadamente 13,20 % por debajo de cero y 0,00475 % por encima de uno.
+
+Se produjo una vista del mapa con ganancia ×16, sin cambiar sus valores originales; aproximadamente 0,0651 % de sus píxeles se recorta a blanco en esa presentación. El laboratorio permite cambiar la ganancia y mantiene la vista absoluta al lado. Artefactos locales, excluidos de Git: `outputs/revision_colab_gaussiano/` con notebook recuperado, imágenes, vista amplificada y registro descriptivo. Procedencia y modificaciones: [registro de ejemplos](assets/ejemplos/README.md).
 
 ### Dataset y estrategia de evaluación
 
