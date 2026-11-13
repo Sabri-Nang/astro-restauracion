@@ -56,6 +56,26 @@ mapas muestran cambios, no resultados de reducción de ruido ni autenticidad.
   crudos ni referencias garantizadas libres de ruido.
 - No presentar imágenes generadas como observaciones astronómicas reales.
 
+## Ensayo gaussiano de etapa 3
+
+Se preparó una derivada de `potw1803a.tif` en
+`outputs/etapa3/gaussiano_sigma0.03_seed123_size256/`: referencia RGB de 8 bits,
+LANCZOS a 256 × 192, copia con ruido gaussiano aditivo de media cero y sigma
+0,03 en escala [0, 1], semilla 123 y generador PCG64. El ruido se agrega después
+de reducir la imagen, de forma independiente por píxel y canal. Se recorta a
+[0, 1] y se redondea a 8 bits. Se guardan la comparación etiquetada, el mapa de
+diferencias de escala fija y `experimento.json` con hashes y parámetros.
+No se modificó el TIFF ni se ejecutó difusión para generar esta derivada.
+
+Crédito: **NASA, ESA, and J. Comerford (University of Colorado-Boulder)**.
+[Fuente](https://esahubble.org/images/potw1803a/) ·
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), según las
+[condiciones de ESA/Hubble](https://esahubble.org/copyright/). Al compartir las
+copias, mantener este crédito e identificar el redimensionamiento y el ruido
+como modificaciones del proyecto. La imagen publicada ya está procesada;
+su uso como referencia del ensayo no supone ausencia de ruido ni autenticidad
+científica de una futura salida generativa.
+
 ## Incorporación de nuevas imágenes
 
 Agregar una fila por imagen con nombre y ubicación del archivo, descripción,
