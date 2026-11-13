@@ -13,17 +13,14 @@ from time import perf_counter
 
 from PIL import Image, ImageOps
 
+from src.honesty import DISCLAIMER
+
 
 MODEL_ID = "stable-diffusion-v1-5/stable-diffusion-v1-5"
 MODEL_REVISION = "451f4fe16113bff5a5d2269ed5ad43b0592e9a14"
 MODEL_LICENSE = "CreativeML OpenRAIL-M"
 MODEL_CACHE = Path(__file__).resolve().parents[1] / ".cache" / "huggingface"
 DEFAULT_PROMPT = "astronomical photograph, stars and galaxies"
-DISCLAIMER = (
-    "Prueba técnica de imagen a imagen. No demuestra reducción de ruido ni "
-    "autenticidad científica. El modelo puede borrar o inventar estructuras. "
-    "La intensidad controla la transformación generativa, no el ruido eliminado."
-)
 
 
 def prepare_image(path: str | Path, max_size: int = 256) -> Image.Image:
