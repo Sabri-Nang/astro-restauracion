@@ -2,7 +2,8 @@
 
 import gradio as gr
 
-from src.diffusion import DISCLAIMER, run_diffusion
+from src.diffusion import run_diffusion
+from src.honesty import DISCLAIMER, DIFFERENCE_NOTICE, difference_map
 
 
 def process_image(path, strength, steps, seed, size):
@@ -10,10 +11,12 @@ def process_image(path, strength, steps, seed, size):
     if not path:
         raise gr.Error("Subí una imagen PNG o TIFF antes de ejecutar la prueba.")
     try:
-        return run_diffusion(
+        prepared, processed, metadata = run_diffusion(
             path, strength=float(strength), steps=int(steps),
             seed=int(seed), max_size=int(size),
         )
+        differences = difference_map(prepared, processed)
+        return prepared, processed, (prepared, processed), differences, metadata
     except (ValueError, OSError, RuntimeError) as error:
         raise gr.Error(str(error)) from error
 
@@ -38,12 +41,26 @@ def create_app() -> gr.Blocks:
             size = gr.Dropdown([256, 512], value=256, label="Lado máximo (píxeles)")
         button = gr.Button("Ejecutar prueba de difusión", variant="primary")
         with gr.Row():
-            prepared = gr.Image(label="Entrada preparada para el modelo", interactive=False)
-            processed = gr.Image(label="Salida generativa de prueba", interactive=False)
+            prepared = gr.Image(label="Entrada preparada para el modelo", interactive=False, format="png")
+            processed = gr.Image(label="Salida generativa de prueba", interactive=False, format="png")
+        comparison = gr.ImageSlider(
+            label="Comparación: entrada preparada (izquierda) / salida (derecha)",
+            interactive=False, format="png",
+        )
+        gr.Markdown(
+            "Mové el deslizador para examinar las mismas regiones. "
+            "La entrada preparada fue convertida a RGB y ajustada de tamaño; "
+            "el archivo original se conserva."
+        )
+        differences = gr.Image(
+            label="Mapa de diferencias (0: sin cambio; 255: diferencia máxima)",
+            interactive=False, image_mode="L", format="png",
+        )
+        gr.Markdown(DIFFERENCE_NOTICE)
         metadata = gr.JSON(label="Parámetros y registro de la prueba")
         button.click(
             process_image, inputs=[upload, strength, steps, seed, size],
-            outputs=[prepared, processed, metadata], concurrency_limit=1,
+            outputs=[prepared, processed, comparison, differences, metadata], concurrency_limit=1,
         )
     app.queue(default_concurrency_limit=1)
     return app
