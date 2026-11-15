@@ -735,7 +735,7 @@ Para una imagen que ya tiene ruido, sin referencia limpia, mostrar entrada y sal
 - [ ] Incorporar capturas y ejemplos reales de uso.
 - [x] Documentar decisiones desde HAI e identificar decisiones expresadas por la autora y propuestas del agente.
 - [ ] Incorporar la captura pendiente a **Qué es real y qué es inventado** y revisar el texto con los resultados finales.
-- [ ] Probar instalación y ejecución desde una copia nueva del repositorio, localmente o en Colab.
+- [x] Instalación bloqueada y arranque desde una copia nueva local, con descarga del ensayo guardado comprobada; sin nueva inferencia. [Registro y alcance](docs/verificacion_etapa4.md). La ejecución completa en Colab sigue pendiente.
 - [ ] Grabar y enlazar la demo de cinco minutos: problema, uso completo, resultados y reflexión sobre la reconstrucción.
 - [ ] Revisar todos los requisitos técnicos y documentales obligatorios.
 
@@ -895,3 +895,5 @@ Artefactos locales: [resumen de resultados](outputs/etapa2/resumen.json) y [comp
 Se retomó la revisión centrada en Julia y una [base de diseño compartida](docs/diseno_interfaz.md). Para iniciar localmente: `uv run --locked python app.py`. El botón **Ver ensayo guardado** abre evidencia real sin ejecutar modelos; **Procesar y comparar** inicia una inferencia nueva.
 
 Para probar los commits locales en Colab: `uv run --locked python colab/preparar_app.py`, subir [app_integrada.ipynb](colab/app_integrada.ipynb) a Colab y cargar el ZIP generado en `outputs/astrorestore_app_colab.zip`. El notebook también admite GitHub después de publicar. [Guía de comprobación, capturas y guion de cinco minutos](docs/entrega_etapa4.md). La ejecución completa en Colab, revisión visual, video, reflexión y licencia del código permanecen pendientes.
+
+Comprobación de etapa 4: instalación en copia nueva, HTTP 200 y descarga del ensayo guardado correctos. [Registro y límites](docs/verificacion_etapa4.md). La herramienta de navegador no estuvo disponible; no se da por realizada la revisión visual ni se fabricaron capturas.
