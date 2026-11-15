@@ -9,10 +9,14 @@ from importlib.metadata import version
 import json
 from pathlib import Path
 import platform
+import shutil
 
 from PIL import Image, ImageDraw
 
-from src.diffusion import prepare_image, run_diffusion
+from src.diffusion import (
+    CONTROLNET_TILE_ID, CONTROLNET_TILE_REVISION, DEFAULT_PROMPT, MODEL_ID,
+    MODEL_REVISION, SafetyFilterBlockedError, prepare_image, run_diffusion,
+)
 from src.honesty import DISCLAIMER, difference_map
 from src.noise import add_gaussian_noise
 
@@ -93,6 +97,7 @@ def prepare_experiment(
 def restore_experiment(
     experiment_dir: str | Path, output_dir: str | Path, *, strength: float = 0.2,
     steps: int = 30, model_seed: int = 42, device: str = "cuda",
+    controlnet_tile: bool = False, controlnet_scale: float = 1.0,
 ) -> dict:
     """Procesa exactamente la entrada ruidosa guardada, con semilla IA separada."""
     experiment_dir, output_dir = Path(experiment_dir), Path(output_dir)
@@ -111,9 +116,11 @@ def restore_experiment(
         noisy = image.copy()
     if reference.mode != "RGB" or noisy.mode != "RGB" or reference.size != noisy.size:
         raise ValueError("La referencia y la entrada ruidosa deben ser RGB del mismo tamaño.")
+    control_arguments = {"controlnet_tile": True, "controlnet_scale": controlnet_scale} if controlnet_tile else {}
     prepared, processed, diffusion_metadata = run_diffusion(
         experiment_dir / "entrada_ruidosa.png", strength=strength, steps=steps,
         seed=model_seed, max_size=manifest["lado_maximo"], device=device,
+        **control_arguments,
     )
     if prepared.mode != noisy.mode or prepared.size != noisy.size or prepared.tobytes() != noisy.tobytes():
         raise ValueError("La difusión modificó la preparación de entrada; la comparación no sería equivalente.")
@@ -148,6 +155,92 @@ def restore_experiment(
     return metadata
 
 
+def sweep_experiment(
+    experiment_dir: str | Path, output_dir: str | Path, *, controlnet_tile: bool = True,
+    controlnet_scale: float = 1.0, device: str = "cuda",
+) -> dict:
+    """Prueba cuatro intensidades sobre el mismo par gaussiano conservado.
+
+    Fija 30 pasos y semilla IA 42. Exige sigma 0,03, semilla de ruido 123 y
+    lado máximo 256. Un bloqueo de contenido se registra y no recibe métricas;
+    otros errores interrumpen el barrido conservando los resultados anteriores.
+    """
+    experiment_dir, output_dir = Path(experiment_dir), Path(output_dir)
+    if output_dir.exists():
+        raise ValueError("La carpeta del barrido ya existe; elegí una nueva.")
+    if device not in ("cuda", "cpu"):
+        raise ValueError("Elegí un dispositivo explícito: cuda o cpu.")
+    manifest = json.loads((experiment_dir / "experimento.json").read_text(encoding="utf-8"))
+    if (manifest["tipo"] != "experimento_controlado_gaussiano"
+            or manifest["ruido"]["sigma_normalizada"] != 0.03
+            or manifest["ruido"]["semilla_ruido"] != 123 or manifest["lado_maximo"] != 256):
+        raise ValueError("El barrido exige sigma 0,03, semilla de ruido 123 y lado máximo 256.")
+    for name in ("referencia_preparada.png", "entrada_ruidosa.png"):
+        if file_hash(experiment_dir / name) != manifest["archivos_sha256"][name]:
+            raise ValueError(f"El archivo {name} cambió desde su preparación.")
+    output_dir.mkdir(parents=True, exist_ok=False)
+    for name in ("referencia_preparada.png", "entrada_ruidosa.png", "experimento.json"):
+        shutil.copy2(experiment_dir / name, output_dir / name)
+    strengths = (0.10, 0.15, 0.20, 0.25)
+    report = {
+        "tipo": "barrido_intensidades_gaussiano", "creado_utc": datetime.now(timezone.utc).isoformat(),
+        "variante": "sd15_controlnet_tile" if controlnet_tile else "sd15_img2img",
+        "condiciones_fijas": {
+            "sigma": 0.03, "semilla_ruido": 123, "lado_maximo": 256,
+            "sha256_original": manifest["sha256_original"], "dimensiones": manifest["dimensiones"],
+            "sha256_entrada": file_hash(output_dir / "entrada_ruidosa.png"),
+            "modelo": MODEL_ID, "revision_modelo": MODEL_REVISION,
+            "prompt": DEFAULT_PROMPT, "scheduler": "DDIMScheduler", "guidance_scale": 1.0,
+            "pasos_configurados": 30, "semilla_modelo": 42, "dispositivo": device,
+            "controlnet": CONTROLNET_TILE_ID if controlnet_tile else None,
+            "revision_controlnet": CONTROLNET_TILE_REVISION if controlnet_tile else None,
+            "controlnet_scale": controlnet_scale if controlnet_tile else None,
+            "condicion": "Misma entrada ruidosa; nunca la referencia" if controlnet_tile else None,
+        },
+        "intensidades": list(strengths), "resultados": [], "completada": False,
+        "ejecucion_cerrada": False, "metricas_calculadas": False, "fase": "iniciado",
+        "evaluacion": "Pendiente; el barrido no implica mejora de restauración.",
+    }
+    save_json(output_dir / "barrido.json", report)
+    try:
+        for strength in strengths:
+            case = output_dir / f"intensidad_{strength:.2f}"
+            print(f"Intensidad {strength:.2f}: 30 pasos, semilla IA 42, Tile={controlnet_tile}", flush=True)
+            report["fase"] = f"ejecutando_{strength:.2f}"
+            save_json(output_dir / "barrido.json", report)
+            try:
+                result = restore_experiment(
+                    output_dir, case, strength=strength, steps=30, model_seed=42, device=device,
+                    controlnet_tile=controlnet_tile, controlnet_scale=controlnet_scale,
+                )
+            except SafetyFilterBlockedError as error:
+                report["resultados"].append({"intensidad": strength, "estado": "bloqueada_filtro_seguridad",
+                                              "salida_guardada": False, "error": str(error)})
+            else:
+                for name in ("referencia_preparada.png", "entrada_ruidosa.png", "experimento.json"):
+                    shutil.copy2(output_dir / name, case / name)
+                report["resultados"].append({
+                    "intensidad": strength, "estado": "correcto", "carpeta": case.name,
+                    "sha256_salida": result["sha256_salida"],
+                    "sha256_entrada_modelo": result["difusion"]["sha256_entrada"],
+                    "pasos_efectivos": result["difusion"]["pasos_efectivos"],
+                    "segundos_inferencia": result["difusion"]["segundos_inferencia"],
+                })
+            save_json(output_dir / "barrido.json", report)
+        report["salidas_validas"] = sum(item["estado"] == "correcto" for item in report["resultados"])
+        report["completada"] = report["salidas_validas"] == len(strengths)
+        report["ejecucion_cerrada"] = True
+        report["fase"] = "barrido_ejecutado_evaluacion_pendiente"
+    except BaseException as error:
+        report["fase"] = "interrumpido"
+        report["error"] = f"{type(error).__name__}: {error}"
+        raise
+    finally:
+        report["finalizado_o_interrumpido_utc"] = datetime.now(timezone.utc).isoformat()
+        save_json(output_dir / "barrido.json", report)
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="phase", required=True)
@@ -165,6 +258,14 @@ def main() -> None:
     restore.add_argument("--steps", type=int, default=30)
     restore.add_argument("--model-seed", type=int, default=42)
     restore.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
+    restore.add_argument("--controlnet-tile", action="store_true")
+    restore.add_argument("--controlnet-scale", type=float, default=1.0)
+    sweep = commands.add_parser("sweep", help="Probar 0,10/0,15/0,20/0,25 sin cambiar la entrada gaussiana")
+    sweep.add_argument("--experiment-dir", type=Path, required=True)
+    sweep.add_argument("--output-dir", type=Path, required=True)
+    sweep.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
+    sweep.add_argument("--controlnet-tile", action="store_true")
+    sweep.add_argument("--controlnet-scale", type=float, default=1.0)
     args = parser.parse_args()
     if args.phase == "prepare":
         provenance = json.loads(args.provenance.read_text(encoding="utf-8")) if args.provenance else None
@@ -172,10 +273,16 @@ def main() -> None:
             args.input, args.output_dir, sigma=args.sigma, noise_seed=args.noise_seed,
             max_size=args.size, provenance=provenance,
         )
-    else:
+    elif args.phase == "restore":
         metadata = restore_experiment(
             args.experiment_dir, args.output_dir, strength=args.strength,
             steps=args.steps, model_seed=args.model_seed, device=args.device,
+            controlnet_tile=args.controlnet_tile, controlnet_scale=args.controlnet_scale,
+        )
+    else:
+        metadata = sweep_experiment(
+            args.experiment_dir, args.output_dir, device=args.device,
+            controlnet_tile=args.controlnet_tile, controlnet_scale=args.controlnet_scale,
         )
     print(json.dumps(metadata, ensure_ascii=False, indent=2), flush=True)
 

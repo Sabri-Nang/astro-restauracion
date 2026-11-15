@@ -7,6 +7,7 @@ from functools import lru_cache
 import hashlib
 from importlib.metadata import version
 import json
+import math
 from pathlib import Path
 import platform
 from time import perf_counter
@@ -19,8 +20,15 @@ from src.honesty import DISCLAIMER
 MODEL_ID = "stable-diffusion-v1-5/stable-diffusion-v1-5"
 MODEL_REVISION = "451f4fe16113bff5a5d2269ed5ad43b0592e9a14"
 MODEL_LICENSE = "CreativeML OpenRAIL-M"
+CONTROLNET_TILE_ID = "lllyasviel/control_v11f1e_sd15_tile"
+CONTROLNET_TILE_REVISION = "3f877705c37010b7221c3d10743307d6b5b6efac"
+CONTROLNET_TILE_LICENSE = "CreativeML OpenRAIL-M"
 MODEL_CACHE = Path(__file__).resolve().parents[1] / ".cache" / "huggingface"
 DEFAULT_PROMPT = "astronomical photograph, stars and galaxies"
+
+
+class SafetyFilterBlockedError(RuntimeError):
+    """La salida fue rechazada por el filtro de contenido del pipeline."""
 
 
 def prepare_image(path: str | Path, max_size: int = 256) -> Image.Image:
@@ -50,7 +58,7 @@ def prepare_image(path: str | Path, max_size: int = 256) -> Image.Image:
 
 
 @lru_cache(maxsize=1)
-def load_pipeline(device: str = "auto"):
+def load_pipeline(device: str = "auto", controlnet_tile: bool = False):
     """Carga la revisión fijada solo cuando se solicita procesar una imagen."""
     import torch
     from diffusers import DDIMScheduler, StableDiffusionImg2ImgPipeline
@@ -64,13 +72,26 @@ def load_pipeline(device: str = "auto"):
         raise ValueError("CUDA no está disponible; utilizá CPU o un entorno GPU de Colab.")
     # La precisión reducida evita duplicar los pesos en float32 en equipos de 16 GB.
     dtype = torch.float16 if selected == "cuda" else torch.bfloat16
-    pipeline = StableDiffusionImg2ImgPipeline.from_pretrained(
+    pipeline_class = StableDiffusionImg2ImgPipeline
+    extra = {}
+    if controlnet_tile:
+        from diffusers import ControlNetModel, StableDiffusionControlNetImg2ImgPipeline
+
+        # La revisión oficial de Tile ofrece pesos .bin, sin variante Safetensors.
+        controlnet = ControlNetModel.from_pretrained(
+            CONTROLNET_TILE_ID, revision=CONTROLNET_TILE_REVISION,
+            dtype=dtype, use_safetensors=False, cache_dir=str(MODEL_CACHE),
+        )
+        pipeline_class = StableDiffusionControlNetImg2ImgPipeline
+        extra["controlnet"] = controlnet
+    pipeline = pipeline_class.from_pretrained(
         MODEL_ID,
         revision=MODEL_REVISION,
         variant="fp16",
         dtype=dtype,
         use_safetensors=True,
         cache_dir=str(MODEL_CACHE),
+        **extra,
     )
     pipeline.scheduler = DDIMScheduler.from_config(pipeline.scheduler.config)
     pipeline.vae.enable_slicing()
@@ -86,6 +107,8 @@ def run_diffusion(
     seed: int = 42,
     max_size: int = 256,
     device: str = "auto",
+    controlnet_tile: bool = False,
+    controlnet_scale: float = 1.0,
 ) -> tuple[Image.Image, Image.Image, dict]:
     """Ejecuta una prueba generativa y devuelve ambas imágenes y su registro."""
     if not 0 < strength <= 0.5:
@@ -96,16 +119,24 @@ def run_diffusion(
         raise ValueError("Aumentá los pasos o la intensidad para ejecutar al menos un paso efectivo.")
     if not isinstance(seed, int) or not 0 <= seed <= 2**32 - 1:
         raise ValueError("La semilla debe ser un entero entre 0 y 4294967295.")
+    if not math.isfinite(controlnet_scale) or not 0 <= controlnet_scale <= 2:
+        raise ValueError("La fuerza de ControlNet debe ser finita y estar entre 0 y 2.")
     image = prepare_image(path, max_size)
     with Path(path).open("rb") as source:
         source_hash = hashlib.file_digest(source, "sha256").hexdigest()
     started = perf_counter()
-    pipeline = load_pipeline(device)
+    pipeline = load_pipeline(device, controlnet_tile=True) if controlnet_tile else load_pipeline(device)
     load_seconds = perf_counter() - started
 
     import torch
 
     generator = torch.Generator(device=pipeline.device).manual_seed(seed)
+    control_arguments = {}
+    if controlnet_tile:
+        control_arguments = {
+            "control_image": image, "controlnet_conditioning_scale": controlnet_scale,
+            "control_guidance_start": 0.0, "control_guidance_end": 1.0, "guess_mode": False,
+        }
     started = perf_counter()
     with torch.inference_mode():
         result = pipeline(
@@ -115,10 +146,11 @@ def run_diffusion(
             num_inference_steps=steps,
             guidance_scale=1.0,
             generator=generator,
+            **control_arguments,
         )
     inference_seconds = perf_counter() - started
     if result.nsfw_content_detected and any(result.nsfw_content_detected):
-        raise RuntimeError("El filtro de seguridad bloqueó la salida; no se guardó como prueba válida.")
+        raise SafetyFilterBlockedError("El filtro de seguridad bloqueó la salida; no se guardó como prueba válida.")
     restored = result.images[0]
     metadata = {
         "tipo": "prueba_tecnica_img2img_no_evaluacion_de_denoising",
@@ -146,6 +178,16 @@ def run_diffusion(
         "versiones": {name: version(name) for name in ("torch", "diffusers", "transformers", "pillow")},
         "advertencia": DISCLAIMER,
     }
+    if controlnet_tile:
+        metadata["controlnet_tile"] = {
+            "modelo": CONTROLNET_TILE_ID, "revision": CONTROLNET_TILE_REVISION,
+            "licencia": CONTROLNET_TILE_LICENSE, "formato_pesos": "PyTorch .bin oficial",
+            "pipeline": type(pipeline).__name__, "fuerza_condicionamiento": controlnet_scale,
+            "inicio_control": 0.0, "fin_control": 1.0, "guess_mode": False,
+            "condicion": "La misma entrada ruidosa preparada, sin filtro ni redimensionamiento adicional",
+            "sha256_archivo_condicion": source_hash, "referencia_limpia_usada_como_control": False,
+            "superresolucion": False,
+        }
     return image, restored, metadata
 
 
@@ -159,11 +201,14 @@ def main() -> None:
     parser.add_argument("--steps", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--size", type=int, choices=(256, 512), default=256)
+    parser.add_argument("--controlnet-tile", action="store_true")
+    parser.add_argument("--controlnet-scale", type=float, default=1.0)
     args = parser.parse_args()
     print(f"Modelo: {MODEL_ID}\nRevisión: {MODEL_REVISION}", flush=True)
     prepared, processed, metadata = run_diffusion(
         args.input, strength=args.strength, steps=args.steps, seed=args.seed,
         max_size=args.size, device=args.device,
+        controlnet_tile=args.controlnet_tile, controlnet_scale=args.controlnet_scale,
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     prepared.save(args.output_dir / "entrada_preparada.png")
