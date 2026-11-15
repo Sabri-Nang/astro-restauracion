@@ -106,6 +106,24 @@ class LaboratoryTests(unittest.TestCase):
         self.assertIsNone(result[4])
         self.assertIn("No se pudo preparar", result[-1])
 
+    def test_empty_provenance_fields_do_not_block_diffusion(self):
+        state = self.preview()[0]
+        for source_url, credit, license_name in ((None, None, None), ("", "", ""),
+                                                 ("  propia  ", None, "  permiso  ")):
+            with self.subTest(source_url=source_url), patch.object(
+                lab, "LAB_OUTPUTS", self.folder / "resultados"
+            ), patch("src.experiment.run_diffusion", return_value=(
+                state["noisy"], state["reference"], {"semilla": 42}
+            )):
+                result = lab.apply_diffusion(state, str(self.source), 0.03, 123, 256,
+                                             0.2, 30, 42, "cuda", source_url, credit,
+                                             license_name, 16)
+                provenance = result[10]["experimento"]["procedencia_declarada"]
+                self.assertEqual(provenance["fuente_declarada"], (source_url or "").strip())
+                self.assertEqual(provenance["credito_declarado"], (credit or "").strip())
+                self.assertEqual(provenance["licencia_declarada"], (license_name or "").strip())
+                self.assertTrue(result[10]["inferencia_ejecutada"])
+
     def test_interface_builds_with_automatic_preview_and_explicit_diffusion(self):
         interface = lab.create_lab()
         config = interface.get_config_file()

@@ -82,8 +82,9 @@ def apply_diffusion(state, path, sigma, noise_seed, size, strength, steps, model
             raise ValueError("La entrada cambió. Esperá a que termine de actualizarse la vista del ruido.")
         folder = LAB_OUTPUTS / uuid4().hex
         provenance = {
-            "archivo": Path(path).name, "fuente_declarada": source_url.strip(),
-            "credito_declarado": credit.strip(), "licencia_declarada": license_name.strip(),
+            "archivo": Path(path).name, "fuente_declarada": (source_url or "").strip(),
+            "credito_declarado": (credit or "").strip(),
+            "licencia_declarada": (license_name or "").strip(),
             "nota": "Procedencia declarada por quien realiza el ensayo; verificar antes de compartir.",
         }
         prepare_experiment(path, folder, sigma=state["sigma"], noise_seed=state["noise_seed"],
