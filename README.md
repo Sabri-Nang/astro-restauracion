@@ -8,6 +8,8 @@
 
 **Última variante evaluada:** SD 1.5 + ControlNet Tile se ejecutó en Colab sobre la misma entrada gaussiana. Las intensidades 0,10 y 0,15 produjeron salidas; 0,20 y 0,25 fueron bloqueadas por el filtro de contenido. Tile mejora ligeramente PSNR y SSIM frente a SD sin Tile, pero ambas salidas válidas siguen por debajo de la entrada ruidosa. La referencia y la entrada gaussiana se conservan en [`assets/ruido_gaussiano`](assets/ruido_gaussiano/README.md), con metadata y verificación de reproducción.
 
+**Próximo diagnóstico preparado:** controles de sigma cero y reconstrucción VAE, con código y notebook específicos. Están comprobados mediante simulaciones; todavía no se ejecutaron ni se interpretaron sus resultados reales.
+
 [Repositorio en GitHub](https://github.com/Sabri-Nang/astro-restauracion) · [Notebook de ejecución](colab/ejecutar_en_colab.ipynb) · [Procedencia de las imágenes](assets/ejemplos/README.md)
 
 ## Descripción
@@ -115,6 +117,7 @@ La comparación utiliza entrada preparada y salida del mismo tamaño. El desliza
 - Evaluación del barrido con PSNR y SSIM contra la referencia sintética verificada en `src/evaluation.py`; exporta JSON, CSV y recortes ampliados opcionales sin ejecutar inferencia.
 - Variante opcional SD 1.5 + ControlNet Tile en `src/diffusion.py`, barrido de cuatro intensidades y notebook específico; ejecutada en Colab con dos salidas válidas y dos bloqueos, evaluada contra la misma referencia.
 - Conservación del par gaussiano en `assets/ruido_gaussiano/` y reproducción verificable por `src/noise_assets.py`.
+- Controles de identidad, reconstrucción VAE y SD/Tile con sigma cero en `src/diagnostics.py`, con notebook específico; ejecución real pendiente.
 - Módulo de análisis preparado, sin procesamiento implementado.
 - Notebook de Colab con una prueba GPU registrada por la autora y acceso a Gradio desde el enlace público confirmado por ella.
 - Instrucciones para agentes en `AGENTS.md` y registro previsto de permisos de imágenes.
@@ -124,7 +127,7 @@ La comparación utiliza entrada preparada y salida del mismo tamaño. El desliza
 ### Pendiente de implementación o validación
 
 - Ampliar la evaluación a otras imágenes y condiciones; el primer barrido no mejoró PSNR ni SSIM respecto de la entrada ruidosa y el caso 0,25 quedó bloqueado por el filtro de seguridad.
-- Ampliar los controles de SD y Tile: la primera ejecución Tile no superó la entrada ruidosa. Están pendientes el diagnóstico VAE/sigma cero y la evaluación de otras condiciones; CLIP sigue siendo el pendiente obligatorio de etapa 3.
+- Ejecutar e interpretar los controles VAE/sigma cero ya preparados y evaluar otras condiciones si corresponde; la primera ejecución Tile no superó la entrada ruidosa. CLIP sigue siendo el pendiente obligatorio de etapa 3.
 - Evaluación de la eficacia de Stable Diffusion para este problema; no se garantiza que sea adecuado.
 - Análisis con CLIP.
 - Filtro bilateral como mejora opcional; PSNR y SSIM ya disponibles por consola para el barrido con referencia conocida.
@@ -248,7 +251,8 @@ astro-restauracion/
 │   ├── noise.py
 │   ├── experiment.py
 │   ├── evaluation.py
-│   └── noise_assets.py
+│   ├── noise_assets.py
+│   └── diagnostics.py
 ├── assets/
 │   ├── ejemplos/
 │   │   ├── README.md
@@ -266,18 +270,20 @@ astro-restauracion/
 │   ├── test_laboratorio.py
 │   ├── test_evaluation.py
 │   ├── test_controlnet.py
-│   └── test_noise_assets.py
+│   ├── test_noise_assets.py
+│   └── test_diagnostics.py
 └── colab/
     ├── ejecutar_en_colab.ipynb
     ├── experimento_ruido_gaussiano.ipynb
     ├── laboratorio_ruido.ipynb
     ├── experimento_controlnet_tile.ipynb
+    ├── controles_sigma0_vae.ipynb
     └── preparar_controlnet.py
 ```
 
 Las comprobaciones de diferencias e integración están en `tests/test_honesty.py`; el ruido, sus estadísticas, recorte y registros se comprueban en `tests/test_noise.py`. Se ejecutan desde la raíz con `uv run --locked python -m unittest discover -s tests -v`; no descargan pesos ni ejecutan inferencias. El laboratorio y la ganancia visual se comprueban en `tests/test_laboratorio.py`. Estas pruebas son independientes de las cinco ejecuciones técnicas de etapa 2 registradas por `src/validation.py`.
 
-La suite completa cuenta con **43 pruebas**. Las ocho de `tests/test_evaluation.py` verifican identidad, error conocido de un nivel RGB, escala fija, tamaños incompatibles, hashes de referencia y salida, exclusión de casos bloqueados y conservación de registros. `tests/test_controlnet.py` y `tests/test_noise_assets.py` agregan once comprobaciones del pipeline y su revisión fija, condicionamiento con la entrada ruidosa, parámetros fijos, bloqueos, reproducción y protección de archivos. Estas pruebas no descargan pesos ni evalúan la eficacia del modelo.
+La suite completa cuenta con **51 pruebas**. Las ocho de `tests/test_evaluation.py` verifican identidad, error conocido de un nivel RGB, escala fija, tamaños incompatibles, hashes de referencia y salida, exclusión de casos bloqueados y conservación de registros. `tests/test_controlnet.py` y `tests/test_noise_assets.py` agregan once comprobaciones del pipeline y su revisión fija, condicionamiento con la entrada ruidosa, parámetros fijos, bloqueos, reproducción y protección de archivos. Las ocho de `tests/test_diagnostics.py` verifican posterior VAE determinista o muestreado, semilla, ausencia de UNet/scheduler en el control VAE, filtro activo y trazabilidad del protocolo sigma cero. Estas pruebas no descargan pesos ni evalúan la eficacia del modelo.
 
 Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye la interfaz sin cargar modelos; la carga se realiza al solicitar una prueba. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. Los pesos se guardan en `.cache/huggingface/`, las imágenes y parámetros de las pruebas en `outputs/` y todos los archivos `.log` del proyecto en `logs/`. Las tres carpetas están ignoradas por Git. Guardar los nuevos registros de ejecución en `logs/`. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
@@ -428,6 +434,33 @@ El barrido verifica los hashes y copia las mismas entradas a una carpeta nueva. 
 **Alternativa para cambios aún no publicados:** desde la raíz, ejecutar `uv run --locked python colab/preparar_controlnet.py`. Genera `outputs/controlnet_tile_colab.zip` y actualiza el hash esperado del notebook. El paquete incluye solo código, dependencias bloqueadas, activos gaussianos públicos y, si está disponible localmente, la evaluación previa de SD 1.5; no incluye tokens, entornos ni pesos. Subir a Colab la copia local del notebook, cambiar a `ORIGEN = 'paquete_local'` y subir el ZIP cuando lo solicite. Se verifica su SHA-256 y el de cada archivo. El selector `google.colab.files.upload()` de esta alternativa está dirigido al navegador de Colab.
 
 La preparación local comprueba la sintaxis de todas las celdas; no sustituye una ejecución completa con GPU. La interfaz de `app.py` y los controles actuales de `laboratorio.py` conservan SD 1.5 sin Tile; esta variante se prueba inicialmente por consola y notebook.
+
+### Próximo experimento: controles de sigma cero y VAE
+
+**Estado:** implementación y notebook preparados, verificados con pruebas simuladas; sin resultados reales todavía. Se busca observar alteraciones introducidas al representar la imagen con el VAE y al procesar una entrada sin ruido artificial. No se cambia el modelo ni se entrena.
+
+El VAE codifica la imagen en una representación latente comprimida y la decodifica de nuevo. En SD img2img, la codificación habitual muestrea el posterior; por eso se comparan tanto un control determinista con su moda como uno con muestreo y semilla 42. Se utilizan la misma revisión, precisión y preprocesamiento del pipeline, con su escalado latente y filtro de seguridad. El pipeline completo se carga para reutilizar componentes, pero los controles VAE no ejecutan UNet, scheduler ni ControlNet. [Documentación de AutoencoderKL](https://huggingface.co/docs/diffusers/en/api/models/autoencoderkl).
+
+Controles planificados sobre el par conservado:
+
+1. Referencia contra sí misma y entrada gaussiana contra la referencia: puntos de partida sin procesamiento IA.
+2. Referencia → VAE usando la moda del posterior, sin muestreo.
+3. Referencia → VAE usando muestreo posterior con semilla 42.
+4. Entrada gaussiana de sigma 0,03 → VAE usando muestreo posterior con semilla 42.
+5. Referencia sin ruido añadido → SD 1.5 sin Tile, intensidad 0,10, 30 pasos configurados y semilla 42.
+6. Misma entrada sigma cero → SD 1.5 + Tile, con los mismos parámetros y fuerza de control 1,0.
+
+**Sigma cero no significa fotografía sin ruido real ni intensidad cero:** la referencia publicada puede tener ruido propio y procesamiento previo. En ambos controles de difusión se conserva `strength=0.1`, equivalente a tres pasos efectivos de DDIM con 30 pasos configurados. En Tile sigma cero, la referencia preparada es explícitamente la propia entrada y condición; el registro lo identifica para no confundirlo con restaurar la copia ruidosa usando una guía limpia externa.
+
+```powershell
+uv run --locked python -m src.diagnostics --asset-dir assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256 --output-dir outputs/etapa3/controles_sigma0_vae --device cuda
+```
+
+La carpeta debe ser nueva. Se verifican hashes, se conserva cada entrada y se guardan salidas, PSNR, SSIM y recortes contra la referencia y, cuando corresponde, también métricas contra la propia entrada del control. Los bloqueos se registran sin imagen ni métricas; otros errores conservan el registro parcial. La identidad tiene PSNR infinito, representado en JSON mediante `psnr_db=null` y `psnr_infinito=true`.
+
+Para ejecutar en Colab, abrir el [notebook de controles VAE y sigma cero](https://colab.research.google.com/github/Sabri-Nang/astro-restauracion/blob/main/colab/controles_sigma0_vae.ipynb), seleccionar GPU T4 si está disponible e interrumpir otros servidores. Ejecutar las celdas en orden y descargar `controles_sigma0_vae.zip` al terminar. Se clona el código publicado y se registra la revisión Git y hashes; si existe una caché del ensayo Tile en esa misma sesión, se reutiliza sin copiar ni versionar pesos. CUDA es explícita y no se cambia automáticamente a CPU.
+
+**Interpretación pendiente:** comparar qué diferencias ya aparecen en VAE sin difusión, cuánto altera SD una entrada sin ruido añadido y si los cambios son coherentes con los ensayos previos. Los errores de estos procesos no lineales no son aditivos: no se pueden restar sus MSE ni asignar porcentajes causales exactos al VAE o a la difusión. Una mejora en la reconstrucción tampoco verifica autenticidad científica. Estos controles son complementarios al cierre obligatorio de etapa 3 con análisis visual e informe para Julia.
 
 ### Preparación inicial del ensayo gaussiano
 
