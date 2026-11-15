@@ -210,7 +210,7 @@ El desarrollo principal se realizará localmente en VS Code, con GitHub como rep
 
 ## Arquitectura del Sistema
 
-El siguiente diagrama representa el **flujo previsto**, no una arquitectura ya implementada:
+Flujo implementado en la interfaz; la evaluación con referencia se mantiene en los experimentos por consola:
 
 ```mermaid
 flowchart LR
@@ -218,12 +218,12 @@ flowchart LR
     B --> C[Modelo de difusión]
     C --> D[Imagen restaurada]
     D --> E[Evaluación y análisis visual]
-    A -->|Original para comparación| E
+    B -->|Entrada preparada para CLIP y comparación| E
     R[Referencia confiable si existe] -.->|PSNR y SSIM| E
     E --> F[Presentación en Gradio]
 ```
 
-Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `src/honesty.py` calcula el mapa absoluto, su amplificación visual opcional y centraliza las advertencias. `laboratorio.py` contiene una interfaz experimental independiente; la interfaz de Julia permanece en `app.py`. `src/noise.py` genera ruido gaussiano y `src/experiment.py` prepara el ensayo y ejecuta su restauración bajo petición. `src/analysis.py` contiene únicamente documentación de su responsabilidad; el análisis visual con un modelo todavía está pendiente.
+Las responsabilidades se distribuyen entre `app.py` y los módulos de `src/` para reutilizar el código localmente y en Google Colab. `src/diffusion.py` implementa la carga diferida del modelo y una prueba imagen a imagen; `src/honesty.py` calcula el mapa absoluto, su amplificación visual opcional y centraliza las advertencias. `laboratorio.py` contiene una interfaz experimental independiente; la interfaz de Julia permanece en `app.py`. `src/noise.py` genera ruido gaussiano y `src/experiment.py` prepara el ensayo y ejecuta su restauración bajo petición. `src/analysis.py` implementa CLIP y el informe; `src/export.py` conserva las imágenes y registros de la descarga. Los modelos se cargan solo al procesar, no al importar módulos.
 
 La prueba admite PNG/TIFF de 8 bits por canal, convierte a RGB y reduce la imagen con LANCZOS sin recortar ni ampliar. Ajusta los lados a múltiplos de ocho y limita el mayor a 256 o 512 píxeles; el redondeo puede alterar ligeramente la relación de aspecto. Rechaza imágenes de alta profundidad para evitar una conversión silenciosa. El archivo de origen se conserva. El deslizador y el mapa comparan esa entrada preparada con la salida, con dimensiones idénticas.
 
@@ -245,6 +245,7 @@ astro-restauracion/
 ├── uv.lock
 ├── src/
 │   ├── diffusion.py
+│   ├── export.py
 │   ├── analysis.py
 │   ├── honesty.py
 │   ├── validation.py
@@ -254,8 +255,10 @@ astro-restauracion/
 │   ├── noise_assets.py
 │   └── diagnostics.py
 ├── assets/
+│   ├── interfaz/tema.css
 │   ├── ejemplos/
 │   │   ├── README.md
+│   │   ├── etapa3_tile/
 │   │   └── originales/
 │   └── ruido_gaussiano/
 │       ├── README.md
@@ -349,7 +352,7 @@ Si Git informa conflictos o cambios locales, revisar el mensaje antes de continu
 
 1. Ejecutar `uv run app.py` o, en Colab, iniciar la celda de Gradio.
 2. Abrir la dirección indicada en la salida. Localmente suele ser `http://127.0.0.1:7860`; si está ocupada puede cambiar. En Colab usar el enlace público temporal `https://…gradio.live`.
-3. Subir un PNG o TIFF de 8 bits por canal. Las imágenes de ejemplo se descargan según su [registro](assets/ejemplos/README.md); todavía no hay un selector de ejemplos integrado.
+3. Subir un PNG o TIFF de 8 bits por canal. Se puede elegir el ejemplo gaussiano integrado; los originales adicionales se descargan según su [registro](assets/ejemplos/README.md).
 4. Ajustar intensidad de transformación, pasos, semilla y tamaño máximo. La intensidad no es un porcentaje de ruido eliminado. El valor 0,5 de las pruebas de etapa 2 no es una recomendación de restauración.
 5. Pulsar **Procesar y comparar**. Se ejecutan SD + Tile y luego CLIP. La primera ejecución descarga los pesos y puede demorar; se recomienda probar en Colab con GPU. CLIP usa CPU para reservar memoria de GPU.
 6. Examinar entrada preparada y salida, mover el deslizador y revisar el mapa y los parámetros. No interpretar una mejora estética como conservación científica.
@@ -437,7 +440,7 @@ La preparación local comprueba la sintaxis de todas las celdas; no sustituye un
 
 ### Controles de sigma cero y VAE — ejecutados y revisados
 
-**Estado:** etapa 3 implementada y documentada; etapa 4 en curso. La interfaz integra SD 1.5 + ControlNet Tile, comparación, diferencias, análisis CLIP y descarga del resultado. Hay evidencia real de difusión en Colab y análisis CLIP en CPU; la prueba interactiva de la interfaz integrada se prepara en etapa 4. Ninguna configuración ensayada demostró mejor fidelidad que conservar la entrada ruidosa.
+**Estado:** cinco controles reales ejecutados en Colab y revisados localmente; resultados y límites registrados a continuación.
 
 El VAE codifica la imagen en una representación latente comprimida y la decodifica de nuevo. En SD img2img, la codificación habitual muestrea el posterior; por eso se comparan tanto un control determinista con su moda como uno con muestreo y semilla 42. Se utilizan la misma revisión, precisión y preprocesamiento del pipeline, con su escalado latente y filtro de seguridad. El pipeline completo se carga para reutilizar componentes, pero los controles VAE no ejecutan UNet, scheduler ni ControlNet. [Documentación de AutoencoderKL](https://huggingface.co/docs/diffusers/en/api/models/autoencoderkl).
 
@@ -565,7 +568,7 @@ Se eligió una interfaz web para cargar archivos, ajustar parámetros y comparar
 
 ### Por qué Stable Diffusion 1.5
 
-Se adoptó inicialmente como prueba img2img por su integración con Diffusers y la posibilidad de ensayarlo con precisión reducida y entradas pequeñas. La prueba CPU y la ejecución T4 están registradas; la selección definitiva depende de la evaluación de denoising. La consigna admite pipelines img2img y propone SDXL como ejemplo; no exige cambiar de modelo. Si la evaluación muestra alteraciones excesivas, se prevé una prueba acotada de ControlNet Tile sobre SD 1.5 antes de integrarlo.
+Se adoptó inicialmente como prueba img2img por su integración con Diffusers y la posibilidad de ensayarlo con precisión reducida y entradas pequeñas. La prueba CPU y la ejecución T4 están registradas; la selección definitiva depende de la evaluación de denoising. La consigna admite pipelines img2img y propone SDXL como ejemplo; no exige cambiar de modelo. Tile ya se ensayó y se integra provisionalmente por decisión de la autora; la mejora de calidad se investigará después de completar la entrega.
 
 ### Por qué CLIP como análisis descriptivo
 
@@ -663,7 +666,7 @@ Los archivos del barrido deben existir localmente; no se descargan al clonar. La
 
 ### Funcionalidades previstas del MVP
 
-El alcance final comprende las funcionalidades siguientes. La prueba actual permite cargar PNG/TIFF de 8 bits, ajustar parámetros, ejecutar difusión, visualizar la entrada preparada y la salida, compararlas mediante un deslizador y consultar el mapa de diferencias. La eficacia de la reducción de ruido, el análisis con un modelo de visión y la exportación explícita con parámetros siguen pendientes de validación o implementación:
+El alcance final comprende las funcionalidades siguientes. La prueba actual permite cargar PNG/TIFF de 8 bits, ajustar parámetros, ejecutar difusión, visualizar la entrada preparada y la salida, compararlas mediante un deslizador y consultar el mapa de diferencias. CLIP y la exportación con parámetros ya están implementados; la eficacia de reducción de ruido sigue sin demostrarse. Las funcionalidades del MVP son:
 
 - Cargar imágenes astronómicas PNG o TIFF.
 - Aplicar un modelo de difusión preentrenado de Hugging Face para reducción de ruido.
@@ -726,7 +729,7 @@ Para una imagen que ya tiene ruido, sin referencia limpia, mostrar entrada y sal
 
 #### Etapa 4 — Documentación y demo (14–16 de noviembre) — en curso
 
-- [ ] Mejorar mensajes, errores y estados de carga donde todavía sea necesario.
+- [x] Incorporar pasos de uso, ayudas de parámetros, progreso, reintento de CLIP y limpieza de resultados al cambiar de entrada. Revisión visual pendiente.
 - [x] Organizar el README según el template del docente, conservando modelos, licencias y hardware probado.
 - [ ] Completar capturas, video, reflexión de la autora y licencia del código antes de la entrega.
 - [ ] Incorporar capturas y ejemplos reales de uso.
@@ -886,3 +889,9 @@ Artefactos locales: [resumen de resultados](outputs/etapa2/resumen.json) y [comp
 ### Evidencia versionada del cierre de etapa 3
 
 [Comparación real y análisis CLIP](assets/ejemplos/etapa3_tile/README.md), con imágenes, registro original, frases, afinidades y hashes. [Detalle de implementación y límites](docs/analisis_visual.md). Se distingue completar el recorrido técnico de demostrar reducción de ruido.
+
+### Etapa 4: interfaz y preparación de demo
+
+Se retomó la revisión centrada en Julia y una [base de diseño compartida](docs/diseno_interfaz.md). Para iniciar localmente: `uv run --locked python app.py`. El botón **Ver ensayo guardado** abre evidencia real sin ejecutar modelos; **Procesar y comparar** inicia una inferencia nueva.
+
+Para probar los commits locales en Colab: `uv run --locked python colab/preparar_app.py`, subir [app_integrada.ipynb](colab/app_integrada.ipynb) a Colab y cargar el ZIP generado en `outputs/astrorestore_app_colab.zip`. El notebook también admite GitHub después de publicar. [Guía de comprobación, capturas y guion de cinco minutos](docs/entrega_etapa4.md). La ejecución completa en Colab, revisión visual, video, reflexión y licencia del código permanecen pendientes.
