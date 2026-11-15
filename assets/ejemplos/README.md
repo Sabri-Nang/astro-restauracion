@@ -76,6 +76,42 @@ como modificaciones del proyecto. La imagen publicada ya está procesada;
 su uso como referencia del ensayo no supone ausencia de ruido ni autenticidad
 científica de una futura salida generativa.
 
+### Barrido de intensidades sobre potw1803a.tif
+
+La referencia y la entrada ruidosa de este ensayo ahora se conservan también
+en [`../ruido_gaussiano/`](../ruido_gaussiano/README.md), con PNG, registro original
+y metadata completa para reproducir el ruido. Esa carpeta no está ignorada por
+Git. Los resultados de difusión permanecen en `outputs/`; conservar el par no
+implica que se haya ejecutado ControlNet Tile ni que se haya validado su eficacia.
+
+Se probaron las intensidades 0,10, 0,15, 0,20 y 0,25 en el laboratorio de Colab
+con referencia de 256 × 192, sigma 0,03, semilla de ruido 123, semilla del modelo
+42, 30 pasos configurados, DDIM y guidance 1. Las tres primeras produjeron
+salidas válidas; la última fue bloqueada por el filtro de seguridad y no se
+conserva como una imagen evaluable. No se entrenó el modelo.
+
+Las derivadas y registros se conservan localmente en
+`outputs/etapa3/barrido_potw1803a_20261115T023534122516Z/`, excluidos de Git.
+`comparacion_cinco_vistas.png` reúne referencia, entrada ruidosa y tres salidas
+sin escalar sus píxeles, con etiquetas y crédito. Se incluyen mapas absolutos,
+comparaciones triples y un ZIP. La evaluación posterior se conserva separada en
+`evaluacion/`, con JSON, CSV y `regiones_ampliadas.png`.
+
+La lámina de evaluación usa los mismos cuatro recortes de 64 × 64 de referencia,
+ruido y salidas válidas, ampliados ×3 con vecino más cercano, sin cambios de
+contraste. Sus coordenadas y método se registran en `evaluacion.json`.
+PSNR y SSIM resultaron inferiores a los de la entrada ruidosa para las tres
+salidas SD en este caso; no se afirma mejora de restauración ni generalización.
+Las métricas no verifican autenticidad científica de las estructuras.
+
+Fuente: https://esahubble.org/images/potw1803a/
+Crédito: **NASA, ESA, and J. Comerford (University of Colorado-Boulder)**.
+Licencia: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), según las
+[condiciones de ESA/Hubble](https://esahubble.org/copyright/).
+Modificaciones: conversión a RGB, reducción LANCZOS, adición de ruido en la
+copia y difusión en las salidas válidas. Al compartir, conservar los créditos
+y aclarar que las salidas generativas no son observaciones verificadas.
+
 ## Incorporación de nuevas imágenes
 
 ### Revisión del ensayo guardado en Colab
