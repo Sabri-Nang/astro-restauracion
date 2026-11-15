@@ -1,0 +1,104 @@
+{
+  "tipo": "activo_ruido_gaussiano_reproducible",
+  "original": {
+    "archivo": "potw1803a.tif",
+    "sha256": "9bc563fef8171c749cc455ad9b0b140652cd26c28187eff4983686bf74f147a2",
+    "formato": "TIFF",
+    "dimensiones": [
+      933,
+      700
+    ],
+    "modo": "RGB"
+  },
+  "procedencia": {
+    "imagen": "potw1803a.tif",
+    "fuente": "https://esahubble.org/images/potw1803a/",
+    "credito": "NASA, ESA, and J. Comerford (University of Colorado-Boulder)",
+    "licencia": "CC BY 4.0",
+    "url_licencia": "https://creativecommons.org/licenses/by/4.0/",
+    "registro": "assets/ejemplos/README.md"
+  },
+  "dimensiones": [
+    256,
+    192
+  ],
+  "modo": "RGB",
+  "bits_por_canal": 8,
+  "orden_arreglo": "alto, ancho, RGB; C",
+  "archivos": {
+    "referencia_preparada.png": {
+      "sha256_archivo": "71482fdf9473d832f5e2effb3873c8987e441874798df65e9f48f7ef5ad5818e",
+      "sha256_pixeles_rgb": "b0d98f57e859779a4c9a04cda147729d1c19bd571e6bc2f716f0847ed09cb642"
+    },
+    "entrada_ruidosa.png": {
+      "sha256_archivo": "cc4ee54d8e6247933e2c9c9afd8310e27820fbcd534a9a821b4b691018b92c58",
+      "sha256_pixeles_rgb": "3139866480700bd5dd0e67055636173dc0a689063700993683b1e116a6496434"
+    }
+  },
+  "ruido": {
+    "tipo": "gaussiano_aditivo",
+    "media_teorica": 0.0,
+    "sigma_normalizada": 0.03,
+    "sigma_equivalente_8bits": 7.6499999999999995,
+    "semilla_ruido": 123,
+    "generador": "PCG64",
+    "numpy": "2.5.4",
+    "escala_calculo": [
+      0.0,
+      1.0
+    ],
+    "canales": "RGB; muestra independiente por píxel y canal",
+    "aplicacion": "Después del redimensionamiento; sobre valores RGB publicados, sin linealización",
+    "recorte": "clip [0, 1] antes de redondear al entero más cercano y convertir a uint8",
+    "fraccion_muestras_recortadas_inferior": 0.13201904296875,
+    "fraccion_muestras_recortadas_superior": 4.7471788194444445e-05,
+    "advertencia": "Degradación sintética; no representa una calibración física del sensor."
+  },
+  "preparacion": {
+    "orientacion": "ImageOps.exif_transpose antes de RGB",
+    "conversion": "Pillow convert('RGB')",
+    "lado_maximo": 256,
+    "interpolacion": "Pillow Image.Resampling.LANCZOS",
+    "escala": "min(1, lado_maximo / max(ancho, alto))",
+    "dimensiones_finales": "int(lado_original * escala) // 8 * 8 para cada lado",
+    "recorte_espacial": false,
+    "ampliacion": false,
+    "linealizacion_color": false,
+    "ruido_antes_o_despues": "Después de redimensionar; usar la referencia conservada"
+  },
+  "algoritmo_ruido": {
+    "arreglo": "np.asarray(referencia, dtype=np.float64) / 255.0",
+    "rng": "np.random.Generator(np.random.PCG64(semilla))",
+    "muestreo": "rng.normal(loc=0.0, scale=sigma, size=(alto, ancho, 3))",
+    "suma": "referencia_normalizada + ruido; muestras independientes por píxel y canal",
+    "recorte": "np.clip(suma, 0.0, 1.0)",
+    "cuantizacion": "np.rint(recorte * 255.0).astype(np.uint8)",
+    "redondeo": "Al entero más cercano; empate al par (np.rint)"
+  },
+  "codificacion_salida": {
+    "formato": "PNG",
+    "compress_level": 6,
+    "optimize": false,
+    "metadata_png_adicional": false
+  },
+  "entorno_preparacion": {
+    "python": "3.12.10",
+    "numpy": "2.5.4",
+    "pillow": "12.3.0"
+  },
+  "entorno_verificacion": {
+    "python": "3.12.10",
+    "numpy": "2.5.4",
+    "pillow": "12.3.0",
+    "zlib": "1.3.1"
+  },
+  "codigo_sha256": {
+    "diffusion.py": "f393523c087793e7497b402555b9b4d6ebf7d0599fe7c0dee462cc7208c5193b",
+    "noise.py": "3e3404069a2ffcf488874386bbe5d2dd61dd9695052c26856bb52973edb1f4e0",
+    "experiment.py": "547a8cd5e93b70aa7076d57df5d30f80ec2cffc936d0e461907f923c11ae10c0",
+    "noise_assets.py": "525c094b160e832175caf9f94e24d9746f2158df383d7dbf6910fceac8f348fc"
+  },
+  "pixeles_reproducidos_verificados": true,
+  "alcance": "Degradación RGB sintética, sin calibración de sensor. La referencia puede tener ruido propio.",
+  "nota_hashes": "El hash de píxeles identifica los datos RGB; el hash PNG también depende de codificación, metadata y versiones de compresión."
+}

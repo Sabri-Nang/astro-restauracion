@@ -1,0 +1,50 @@
+{
+  "tipo": "experimento_controlado_gaussiano",
+  "fase": "ruido_preparado_sin_inferencia",
+  "creado_utc": "2026-11-13T03:24:27.572486+00:00",
+  "entrada_original": "potw1803a.tif",
+  "sha256_original": "9bc563fef8171c749cc455ad9b0b140652cd26c28187eff4983686bf74f147a2",
+  "procedencia_declarada": {
+    "imagen": "potw1803a.tif",
+    "fuente": "https://esahubble.org/images/potw1803a/",
+    "credito": "NASA, ESA, and J. Comerford (University of Colorado-Boulder)",
+    "licencia": "CC BY 4.0",
+    "url_licencia": "https://creativecommons.org/licenses/by/4.0/",
+    "registro": "assets/ejemplos/README.md"
+  },
+  "dimensiones": [
+    256,
+    192
+  ],
+  "modo": "RGB",
+  "lado_maximo": 256,
+  "preparacion": "RGB 8 bits, LANCZOS, sin recorte ni ampliación, lados múltiplos de ocho",
+  "ruido": {
+    "tipo": "gaussiano_aditivo",
+    "media_teorica": 0.0,
+    "sigma_normalizada": 0.03,
+    "sigma_equivalente_8bits": 7.6499999999999995,
+    "semilla_ruido": 123,
+    "generador": "PCG64",
+    "numpy": "2.5.4",
+    "escala_calculo": [
+      0.0,
+      1.0
+    ],
+    "canales": "RGB; muestra independiente por píxel y canal",
+    "aplicacion": "Después del redimensionamiento; sobre valores RGB publicados, sin linealización",
+    "recorte": "clip [0, 1] antes de redondear al entero más cercano y convertir a uint8",
+    "fraccion_muestras_recortadas_inferior": 0.13201904296875,
+    "fraccion_muestras_recortadas_superior": 4.7471788194444445e-05,
+    "advertencia": "Degradación sintética; no representa una calibración física del sensor."
+  },
+  "archivos_sha256": {
+    "referencia_preparada.png": "71482fdf9473d832f5e2effb3873c8987e441874798df65e9f48f7ef5ad5818e",
+    "entrada_ruidosa.png": "cc4ee54d8e6247933e2c9c9afd8310e27820fbcd534a9a821b4b691018b92c58"
+  },
+  "alcance_referencia": "Referencia para esta degradación sintética; no se supone libre de ruido ni científicamente perfecta.",
+  "evaluacion_visual": "Pendiente: revisar fondo, estrellas tenues y estructuras difusas antes de ejecutar difusión.",
+  "inferencia_ejecutada": false,
+  "python": "3.12.10",
+  "pillow": "12.3.0"
+}
