@@ -366,14 +366,14 @@ uv run --locked python laboratorio.py
 
 Generar y examinar el ruido es liviano; se recomienda Colab con GPU para difusión. En Colab, ejecutar las celdas del notebook de laboratorio y abrir su enlace público temporal. La celda del servidor debe permanecer activa. El clon necesita los módulos publicados; en una sesión previa, interrumpir el servidor, actualizar con `git pull --ff-only origin main` y volver a iniciarlo. No se publican cambios automáticamente.
 
-1. Subir un PNG o TIFF de 8 bits propio. El panel de original y procedencia muestra la imagen en RGB sin reducir y permite indicar fuente, crédito y licencia declarados. Las mismas restricciones de profundidad y tamaño mínimo de `prepare_image` se mantienen.
+1. Subir un PNG o TIFF de 8 bits propio. El panel de original y procedencia muestra la imagen en RGB sin reducir y permite indicar fuente, crédito y licencia declarados. Estos campos son opcionales para ejecutar el ensayo; si no se completan, se guardan vacíos sin atribuir una licencia. Antes de compartir resultados hay que verificar y completar la procedencia. Las mismas restricciones de profundidad y tamaño mínimo de `prepare_image` se mantienen.
 2. Ajustar sigma (0–0,2), semilla del ruido y lado máximo (256 o 512). El ruido se actualiza con el control, sin ejecutar difusión. Se muestran la referencia preparada y su copia ruidosa; cualquier salida anterior se descarta al cambiar imagen, sigma, semilla o tamaño.
 3. Pulsar **Aplicar difusión a la copia ruidosa** para cargar y ejecutar el modelo. Se procesa la misma copia mostrada, verificada antes de inferir. CUDA es explícita y no cambia silenciosamente a CPU. Durante inferencia conviene esperar antes de mover controles; la cola serializa las operaciones para conservar la correspondencia entre vistas.
 4. Comparar **referencia preparada → ruido → salida**. El comparador muestra referencia/ruido antes de inferir y ruido/salida después. Los parámetros de la última ejecución quedan registrados.
 5. Elegir el par del mapa: referencia/ruido, ruido/salida o referencia/salida. Se presentan el mapa absoluto de escala fija y una vista multiplicada por una ganancia entre 1 y 64, con recorte a 255. La ganancia modifica solo la presentación; no regenera ruido, no ejecuta difusión y no cambia las imágenes ni el mapa absoluto. Se muestran mínimo, máximo, media y fracciones de píxeles no nulos y recortados. Son estadísticas descriptivas del mapa redondeado, no métricas de calidad de restauración.
 6. Descargar el ZIP después de inferir. Incluye referencia, ruido, salida, mapas absolutos y los registros. Las carpetas únicas de cada ejecución quedan en `outputs/laboratorio/`; no se sobrescriben ensayos ni se publica la procedencia declarada automáticamente.
 
-**Verificación:** 23 pruebas automatizadas aprobadas, incluyendo cambios de sigma, limpieza de resultados anteriores, protección frente a una entrada desactualizada, ganancia visual y ZIP, con difusión simulada. También se comprobó el servidor real por HTTP con subida de imagen sintética, sigma cero, cambio de ganancia y limpieza de vistas. No se ejecutó inferencia real para verificar estos cambios ni se realizó todavía una revisión visual del laboratorio en el navegador de Colab.
+**Verificación:** 24 pruebas automatizadas aprobadas, incluyendo cambios de sigma, limpieza de resultados anteriores, protección frente a una entrada desactualizada, ganancia visual y ZIP, con difusión simulada. También se comprobó el servidor real por HTTP con subida de imagen sintética, sigma cero, cambio de ganancia y limpieza de vistas. No se ejecutó inferencia real para verificar estos cambios ni se realizó todavía una revisión visual del laboratorio en el navegador de Colab.
 
 ### Ensayos posteriores solicitados — todavía no implementados
 
@@ -525,6 +525,8 @@ La prioridad es integrar CLIP ViT-B/32 y un informe comprensible para Julia. El 
 Para una imagen que ya tiene ruido, sin referencia limpia, mostrar entrada y salida sin inventar una referencia. Si el modelo borra o inventa detalles, registrar el fallo y revisar su adecuación. El mapa de diferencias indica modificaciones, no autenticidad.
 
 **Criterio de cierre:** carga → difusión → análisis visual → resultados, con explicaciones comprensibles y ejemplos documentados. El análisis visual es obligatorio para la entrega final; las métricas y una línea base clásica son opcionales.
+
+- [ ] Al finalizar la etapa 3, recordar a la autora revisar la interfaz pensando en Julia y evaluar la implementación de un sistema de diseño. Esta revisión queda para después del cierre de la etapa 3, según lo solicitado por la autora.
 
 #### Etapa 4 — Documentación y demo (14–16 de noviembre) — pendiente
 
