@@ -1,0 +1,85 @@
+{
+  "modelo": "openai/clip-vit-base-patch32",
+  "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+  "licencia": "MIT",
+  "dispositivo": "cpu",
+  "precision": "float32",
+  "torch": "2.15.0+cpu",
+  "transformers": "5.22.2",
+  "preprocesamiento": {
+    "crop_size": {
+      "height": 224,
+      "width": 224
+    },
+    "do_center_crop": true,
+    "do_normalize": true,
+    "do_resize": true,
+    "image_mean": [
+      0.48145466,
+      0.4578275,
+      0.40821073
+    ],
+    "image_std": [
+      0.26862954,
+      0.26130258,
+      0.27577711
+    ],
+    "resample": 3,
+    "size": {
+      "shortest_edge": 224
+    },
+    "do_convert_rgb": true,
+    "do_rescale": true,
+    "rescale_factor": 0.00392156862745098,
+    "image_processor_type": "CLIPImageProcessor"
+  },
+  "afinidades": [
+    {
+      "descripcion": "campo astronómico",
+      "frase": "an astronomical photograph of stars and galaxies",
+      "entrada": 0.2901999354362488,
+      "salida": 0.2888195514678955,
+      "diferencia": -0.0013803839683532715
+    },
+    {
+      "descripcion": "textura granulada",
+      "frase": "an astronomical photograph with grainy noise",
+      "entrada": 0.29920655488967896,
+      "salida": 0.2984568476676941,
+      "diferencia": -0.0007497072219848633
+    },
+    {
+      "descripcion": "fondo uniforme",
+      "frase": "an astronomical photograph with a smooth background",
+      "entrada": 0.2818453311920166,
+      "salida": 0.2749127745628357,
+      "diferencia": -0.006932556629180908
+    },
+    {
+      "descripcion": "estructuras definidas",
+      "frase": "an astronomical photograph with sharp stars and fine structures",
+      "entrada": 0.28188005089759827,
+      "salida": 0.2750173509120941,
+      "diferencia": -0.00686269998550415
+    },
+    {
+      "descripcion": "estructuras difusas",
+      "frase": "an astronomical photograph with blurry diffuse structures",
+      "entrada": 0.3096635341644287,
+      "salida": 0.31260067224502563,
+      "diferencia": 0.002937138080596924
+    },
+    {
+      "descripcion": "textura artificial",
+      "frase": "an astronomical photograph with artificial textures",
+      "entrada": 0.2786296010017395,
+      "salida": 0.2837381064891815,
+      "diferencia": 0.005108505487442017
+    }
+  ],
+  "limites": "CLIP compara afinidades con frases fijas en inglés. No mide ruido eliminado, calidad ni probabilidad de que la frase sea verdadera. No localiza cambios ni detecta estrellas inventadas. Su ajuste a 224 píxeles y recorte central pueden omitir los bordes. Revisá también el deslizador y las diferencias.",
+  "imagenes_sha256": {
+    "entrada_ruidosa.png": "cc4ee54d8e6247933e2c9c9afd8310e27820fbcd534a9a821b4b691018b92c58",
+    "salida_tile.png": "83e797db554c58ffe593005379bb72175ffce04d1daad14cfa5e064136a5657a"
+  }
+}

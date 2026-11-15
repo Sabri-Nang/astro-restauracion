@@ -1,0 +1,112 @@
+{
+  "tipo": "ensayo_difusion_sobre_ruido_gaussiano",
+  "inferencia_ejecutada": true,
+  "fase": "difusion_ejecutada_evaluacion_visual_pendiente",
+  "creado_utc": "2026-11-15T03:39:32.090065+00:00",
+  "experimento": {
+    "tipo": "experimento_controlado_gaussiano",
+    "fase": "ruido_preparado_sin_inferencia",
+    "creado_utc": "2026-11-13T03:24:27.572486+00:00",
+    "entrada_original": "potw1803a.tif",
+    "sha256_original": "9bc563fef8171c749cc455ad9b0b140652cd26c28187eff4983686bf74f147a2",
+    "procedencia_declarada": {
+      "imagen": "potw1803a.tif",
+      "fuente": "https://esahubble.org/images/potw1803a/",
+      "credito": "NASA, ESA, and J. Comerford (University of Colorado-Boulder)",
+      "licencia": "CC BY 4.0",
+      "url_licencia": "https://creativecommons.org/licenses/by/4.0/",
+      "registro": "assets/ejemplos/README.md"
+    },
+    "dimensiones": [
+      256,
+      192
+    ],
+    "modo": "RGB",
+    "lado_maximo": 256,
+    "preparacion": "RGB 8 bits, LANCZOS, sin recorte ni ampliación, lados múltiplos de ocho",
+    "ruido": {
+      "tipo": "gaussiano_aditivo",
+      "media_teorica": 0.0,
+      "sigma_normalizada": 0.03,
+      "sigma_equivalente_8bits": 7.6499999999999995,
+      "semilla_ruido": 123,
+      "generador": "PCG64",
+      "numpy": "2.5.4",
+      "escala_calculo": [
+        0.0,
+        1.0
+      ],
+      "canales": "RGB; muestra independiente por píxel y canal",
+      "aplicacion": "Después del redimensionamiento; sobre valores RGB publicados, sin linealización",
+      "recorte": "clip [0, 1] antes de redondear al entero más cercano y convertir a uint8",
+      "fraccion_muestras_recortadas_inferior": 0.13201904296875,
+      "fraccion_muestras_recortadas_superior": 4.7471788194444445e-05,
+      "advertencia": "Degradación sintética; no representa una calibración física del sensor."
+    },
+    "archivos_sha256": {
+      "referencia_preparada.png": "71482fdf9473d832f5e2effb3873c8987e441874798df65e9f48f7ef5ad5818e",
+      "entrada_ruidosa.png": "cc4ee54d8e6247933e2c9c9afd8310e27820fbcd534a9a821b4b691018b92c58"
+    },
+    "alcance_referencia": "Referencia para esta degradación sintética; no se supone libre de ruido ni científicamente perfecta.",
+    "evaluacion_visual": "Pendiente: revisar fondo, estrellas tenues y estructuras difusas antes de ejecutar difusión.",
+    "inferencia_ejecutada": false,
+    "python": "3.12.10",
+    "pillow": "12.3.0"
+  },
+  "sha256_registro_experimento": "e0eb7383ab81f8b9d20164e8618d149200309f1fb980c5632c8931846f8e4fc3",
+  "difusion": {
+    "tipo": "prueba_tecnica_img2img_no_evaluacion_de_denoising",
+    "modelo": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "licencia": "CreativeML OpenRAIL-M",
+    "entrada": "entrada_ruidosa.png",
+    "sha256_entrada": "cc4ee54d8e6247933e2c9c9afd8310e27820fbcd534a9a821b4b691018b92c58",
+    "dimensiones_preparadas": [
+      256,
+      192
+    ],
+    "preprocesamiento": "RGB 8 bits, LANCZOS, sin recorte, lados ajustados a múltiplos de 8",
+    "ruido_artificial_agregado": true,
+    "prompt": "astronomical photograph, stars and galaxies",
+    "intensidad": 0.1,
+    "pasos_configurados": 30,
+    "pasos_efectivos": 3,
+    "guidance_scale": 1.0,
+    "semilla": 42,
+    "scheduler": "DDIMScheduler",
+    "dispositivo": "cuda:0",
+    "precision": "torch.float16",
+    "segundos_carga_o_acceso_cache_memoria": 51.861,
+    "segundos_inferencia": 2.508,
+    "python": "3.12.3",
+    "sistema": "Linux-6.6.159+-x86_64-with-glibc2.39",
+    "versiones": {
+      "torch": "2.15.0",
+      "diffusers": "0.42.1",
+      "transformers": "5.22.2",
+      "pillow": "12.3.0"
+    },
+    "advertencia": "Imagen reconstruida por IA. El modelo puede borrar o inventar estructuras. Esta prueba no demuestra reducción de ruido ni autenticidad científica. La intensidad controla la transformación generativa, no el ruido eliminado.",
+    "controlnet_tile": {
+      "modelo": "lllyasviel/control_v11f1e_sd15_tile",
+      "revision": "3f877705c37010b7221c3d10743307d6b5b6efac",
+      "licencia": "CreativeML OpenRAIL-M",
+      "formato_pesos": "PyTorch .bin oficial",
+      "pipeline": "StableDiffusionControlNetImg2ImgPipeline",
+      "fuerza_condicionamiento": 1.0,
+      "inicio_control": 0.0,
+      "fin_control": 1.0,
+      "guess_mode": false,
+      "condicion": "La misma entrada ruidosa preparada, sin filtro ni redimensionamiento adicional",
+      "sha256_archivo_condicion": "cc4ee54d8e6247933e2c9c9afd8310e27820fbcd534a9a821b4b691018b92c58",
+      "referencia_limpia_usada_como_control": false,
+      "superresolucion": false
+    },
+    "origen_ruido_evaluacion": "Aplicado antes de difusión y registrado en el experimento"
+  },
+  "sha256_salida": "83e797db554c58ffe593005379bb72175ffce04d1daad14cfa5e064136a5657a",
+  "evaluacion_visual": "Pendiente: comparar las tres vistas; registrar reducción aparente, pérdidas y posibles artefactos.",
+  "interpretacion_mapas": "Ruido-salida muestra cambios del modelo; referencia-salida muestra diferencias respecto del objetivo sintético. Ninguno prueba autenticidad.",
+  "advertencia": "Imagen reconstruida por IA. El modelo puede borrar o inventar estructuras. Esta prueba no demuestra reducción de ruido ni autenticidad científica. La intensidad controla la transformación generativa, no el ruido eliminado.",
+  "metricas_calculadas": false
+}

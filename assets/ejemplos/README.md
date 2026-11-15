@@ -183,3 +183,7 @@ Solicita fuente, crédito y licencia o permiso declarados y los guarda en el
 registro de la ejecución; no los valida automáticamente. Comprobar esa información
 antes de compartir imágenes o ZIP. Los archivos de ensayo quedan en `outputs/`,
 excluidos de Git.
+
+## Ejemplo versionado del cierre de etapa 3
+
+[SD + Tile y CLIP sobre potw1803a](etapa3_tile/README.md): comparación real, atribución, licencia, parámetros, informe y hashes. Acierto técnico del recorrido y fallo de restauración documentados sin afirmar reducción de ruido validada.

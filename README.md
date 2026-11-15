@@ -4,7 +4,7 @@
 
 **Trabajo Integrador N.º 2 · IFTS 24 · 2026.** Sub-tarea B: eliminación de ruido y desenfoque; el MVP se limita a **reducción de ruido**. La eficacia de restauración todavía no está demostrada.
 
-**Estado:** etapa 2 completada y etapa 3 en desarrollo. Están implementados difusión imagen a imagen, comparación y mapa de diferencias. Se probaron cuatro intensidades sobre la misma entrada gaussiana en Colab: 0,10, 0,15 y 0,20 produjeron salidas válidas; 0,25 fue bloqueada por el filtro de seguridad del pipeline. La evaluación inicial con PSNR, SSIM y recortes muestra que ninguna salida válida mejora la fidelidad respecto de la entrada ruidosa en ese ensayo. La generalización no está evaluada. Análisis con CLIP y exportación explícita con parámetros desde la interfaz principal siguen pendientes.
+**Estado:** etapa 3 implementada y documentada; etapa 4 en curso. La interfaz integra SD 1.5 + ControlNet Tile, comparación, diferencias, análisis CLIP y descarga del resultado. Hay evidencia real de difusión en Colab y análisis CLIP en CPU; la prueba interactiva de la interfaz integrada se prepara en etapa 4. Ninguna configuración ensayada demostró mejor fidelidad que conservar la entrada ruidosa.
 
 **Última variante evaluada:** SD 1.5 + ControlNet Tile se ejecutó en Colab sobre la misma entrada gaussiana. Las intensidades 0,10 y 0,15 produjeron salidas; 0,20 y 0,25 fueron bloqueadas por el filtro de contenido. Tile mejora ligeramente PSNR y SSIM frente a SD sin Tile, pero ambas salidas válidas siguen por debajo de la entrada ruidosa. La referencia y la entrada gaussiana se conservan en [`assets/ruido_gaussiano`](assets/ruido_gaussiano/README.md), con metadata y verificación de reproducción.
 
@@ -20,7 +20,7 @@ Las herramientas generativas plantean otro problema: pueden introducir detalles 
 
 AstroRestore AI propone explorar la reducción de ruido y ofrecer herramientas para examinar los cambios introducidos por la IA, especialmente antes de utilizar las imágenes con fines educativos o de divulgación.
 
-La aplicación está dirigida a Julia, una profesora de Física aficionada a la astrofotografía. El prototipo utiliza Stable Diffusion 1.5 para transformar imágenes y permite inspeccionar sus modificaciones mediante comparación y diferencias de píxeles. El análisis comparativo con CLIP está previsto, pero todavía no está integrado.
+La aplicación está dirigida a Julia, una profesora de Física aficionada a la astrofotografía. El prototipo transforma imágenes con SD 1.5 + Tile y permite inspeccionar modificaciones mediante comparación, diferencias y afinidades descriptivas CLIP, con límites explícitos.
 
 ### Objetivos del proyecto
 
@@ -76,7 +76,7 @@ El proceso requiere tiempo y ajustes manuales para decidir cuánto ruido elimina
 
 Desde su computadora personal, después de una sesión de observación o mientras prepara material educativo, Julia cargaría una imagen previamente procesada y apilada, seleccionaría la intensidad y ejecutaría la restauración. Luego compararía ambas imágenes, consultaría el mapa de diferencias y revisaría el análisis visual y sus advertencias antes de decidir si comparte el resultado.
 
-Este recorrido describe la experiencia final propuesta. La interfaz ofrece una prueba técnica img2img y comparaciones. El ensayo gaussiano está separado en consola y notebook; el análisis visual con CLIP sigue pendiente.
+La interfaz ofrece carga, difusión con Tile, comparación, análisis CLIP y descarga. El ensayo gaussiano controlado se mantiene separado en consola y notebook; no se inventa una referencia limpia para las imágenes del usuario.
 
 ## Demo
 
@@ -118,7 +118,7 @@ La comparación utiliza entrada preparada y salida del mismo tamaño. El desliza
 - Variante opcional SD 1.5 + ControlNet Tile en `src/diffusion.py`, barrido de cuatro intensidades y notebook específico; ejecutada en Colab con dos salidas válidas y dos bloqueos, evaluada contra la misma referencia.
 - Conservación del par gaussiano en `assets/ruido_gaussiano/` y reproducción verificable por `src/noise_assets.py`.
 - Controles de identidad, reconstrucción VAE y SD/Tile con sigma cero en `src/diagnostics.py`, ejecutados en Colab y revisados mediante hashes, métricas recalculadas y recortes comunes.
-- Módulo de análisis preparado, sin procesamiento implementado.
+- Análisis comparativo CLIP con revisión fija, informe en español y recuperación sin repetir difusión; exportación ZIP desde Gradio.
 - Notebook de Colab con una prueba GPU registrada por la autora y acceso a Gradio desde el enlace público confirmado por ella.
 - Instrucciones para agentes en `AGENTS.md` y registro previsto de permisos de imágenes.
 - Exclusión del entorno virtual y archivos generados mediante `.gitignore`.
@@ -127,9 +127,9 @@ La comparación utiliza entrada preparada y salida del mismo tamaño. El desliza
 ### Pendiente de implementación o validación
 
 - Ampliar la evaluación a otras imágenes y condiciones; el primer barrido no mejoró PSNR ni SSIM respecto de la entrada ruidosa y el caso 0,25 quedó bloqueado por el filtro de seguridad.
-- Decidir si ampliar los experimentos de calidad: los controles VAE/sigma cero ya se ejecutaron y no aportaron una restauración que supere la entrada ruidosa. CLIP sigue siendo el pendiente obligatorio de etapa 3.
+- Optimización de calidad pospuesta: continuar con SD + Tile para la entrega, conservando los resultados desfavorables observados.
 - Evaluación de la eficacia de Stable Diffusion para este problema; no se garantiza que sea adecuado.
-- Análisis con CLIP.
+- Completar la validación interactiva, capturas y demo de la aplicación integrada en Colab.
 - Filtro bilateral como mejora opcional; PSNR y SSIM ya disponibles por consola para el barrido con referencia conocida.
 - Revalidar la versión actual desde una copia nueva y comprobar la interfaz actualizada en Colab; las pruebas CPU y T4 previas están registradas.
 - Experimentos de reducción de ruido; las cinco pruebas técnicas de procesamiento ya están registradas.
@@ -164,7 +164,7 @@ PyTorch está declarado como dependencia directa. Pillow, PyTorch y Diffusers se
 ### Uso previsto
 
 - **PyTorch y Hugging Face Diffusers:** inferencia del modelo de difusión.
-- **Hugging Face Transformers:** integración prevista de CLIP ViT-B/32, todavía pendiente.
+- **Hugging Face Transformers:** CLIP ViT-B/32 integrado, carga diferida en CPU y preprocesamiento PIL fijo.
 - **OpenCV:** procesamiento y filtro bilateral de referencia; pendiente de incorporación a las dependencias.
 - **Pillow y NumPy:** lectura y manipulación de imágenes y arreglos.
 - **scikit-image:** cálculo de PSNR y SSIM con referencia sintética, integrado como dependencia y disponible por consola.
@@ -184,9 +184,9 @@ La variante agrega [`lllyasviel/control_v11f1e_sd15_tile`](https://huggingface.c
 
 **No es un modelo especializado en restauración astronómica** y su utilidad para este problema debe demostrarse experimentalmente. El parámetro de intensidad controla la transformación generativa; no expresa directamente cuánto ruido astronómico se elimina. Una intensidad baja no garantiza la conservación de las estructuras originales. La primera prueba de carga e inferencia no equivale a validar el denoising.
 
-La adopción definitiva del modelo dependerá de los resultados de evaluación. Para cumplir el análisis visual obligatorio se prevé [`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32), arquitectura CLIP ViT-B/32, con licencia MIT del [proyecto CLIP](https://github.com/openai/CLIP/blob/main/LICENSE). Se compararán las afinidades de ambas imágenes con un conjunto fijo de descripciones. Su revisión y funcionamiento se validarán en la fase de análisis; todavía no está integrado. CLIP no genera descripciones libres ni verifica la autenticidad de una imagen.
+Se integra [`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32), revisión `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`, bajo licencia MIT del [proyecto CLIP](https://github.com/openai/CLIP/blob/main/LICENSE). Compara similitudes coseno con seis frases fijas en inglés. El informe en español utiliza una plantilla determinista, sin generar descripciones libres ni verificar autenticidad. [Método, límites y validación](docs/analisis_visual.md).
 
-El análisis visual tendrá carácter descriptivo y exploratorio. Sus observaciones no equivaldrán a una verificación científica de las estructuras restauradas.
+El análisis visual es descriptivo y exploratorio. Sus afinidades no son medidas de ruido eliminado ni probabilidades de calidad. El recorte central estándar puede omitir los bordes.
 
 ### Hardware con el que se probó
 
@@ -283,7 +283,7 @@ astro-restauracion/
 
 Las comprobaciones de diferencias e integración están en `tests/test_honesty.py`; el ruido, sus estadísticas, recorte y registros se comprueban en `tests/test_noise.py`. Se ejecutan desde la raíz con `uv run --locked python -m unittest discover -s tests -v`; no descargan pesos ni ejecutan inferencias. El laboratorio y la ganancia visual se comprueban en `tests/test_laboratorio.py`. Estas pruebas son independientes de las cinco ejecuciones técnicas de etapa 2 registradas por `src/validation.py`.
 
-La suite completa cuenta con **51 pruebas**. Las ocho de `tests/test_evaluation.py` verifican identidad, error conocido de un nivel RGB, escala fija, tamaños incompatibles, hashes de referencia y salida, exclusión de casos bloqueados y conservación de registros. `tests/test_controlnet.py` y `tests/test_noise_assets.py` agregan once comprobaciones del pipeline y su revisión fija, condicionamiento con la entrada ruidosa, parámetros fijos, bloqueos, reproducción y protección de archivos. Las ocho de `tests/test_diagnostics.py` verifican posterior VAE determinista o muestreado, semilla, ausencia de UNet/scheduler en el control VAE, filtro activo y trazabilidad del protocolo sigma cero. Estas pruebas no descargan pesos ni evalúan la eficacia del modelo.
+La suite completa cuenta con **55 pruebas**. Las ocho de `tests/test_evaluation.py` verifican identidad, error conocido de un nivel RGB, escala fija, tamaños incompatibles, hashes de referencia y salida, exclusión de casos bloqueados y conservación de registros. `tests/test_controlnet.py` y `tests/test_noise_assets.py` agregan once comprobaciones del pipeline y su revisión fija, condicionamiento con la entrada ruidosa, parámetros fijos, bloqueos, reproducción y protección de archivos. Las ocho de `tests/test_diagnostics.py` verifican posterior VAE determinista o muestreado, semilla, ausencia de UNet/scheduler en el control VAE, filtro activo y trazabilidad del protocolo sigma cero. Estas pruebas no descargan pesos ni evalúan la eficacia del modelo. Las cuatro pruebas adicionales cubren similitudes conocidas, entradas incompatibles, recuperación de CLIP sin repetir difusión e integridad del ZIP.
 
 Existe además un entorno local `.venv/`, excluido del control de versiones. `app.py` construye la interfaz sin cargar modelos; la carga se realiza al solicitar una prueba. La carpeta local `assets/ejemplos/originales/` contiene seis imágenes TIFF de ESA/Hubble, excluidas de Git mediante `.gitignore`; sus fuentes, créditos, licencias e instrucciones de descarga manual están documentados en `assets/ejemplos/README.md`. Esta carpeta y sus imágenes no se obtienen al clonar el repositorio. Los pesos se guardan en `.cache/huggingface/`, las imágenes y parámetros de las pruebas en `outputs/` y todos los archivos `.log` del proyecto en `logs/`. Las tres carpetas están ignoradas por Git. Guardar los nuevos registros de ejecución en `logs/`. `AGENTS.md` establece las instrucciones para agentes en todo el repositorio.
 
@@ -351,9 +351,9 @@ Si Git informa conflictos o cambios locales, revisar el mensaje antes de continu
 2. Abrir la dirección indicada en la salida. Localmente suele ser `http://127.0.0.1:7860`; si está ocupada puede cambiar. En Colab usar el enlace público temporal `https://…gradio.live`.
 3. Subir un PNG o TIFF de 8 bits por canal. Las imágenes de ejemplo se descargan según su [registro](assets/ejemplos/README.md); todavía no hay un selector de ejemplos integrado.
 4. Ajustar intensidad de transformación, pasos, semilla y tamaño máximo. La intensidad no es un porcentaje de ruido eliminado. El valor 0,5 de las pruebas de etapa 2 no es una recomendación de restauración.
-5. Pulsar **Ejecutar prueba de difusión**. La primera ejecución carga o descarga los pesos y puede demorar; el desarrollo local usa CPU y las inferencias se priorizan en Colab con GPU.
+5. Pulsar **Procesar y comparar**. Se ejecutan SD + Tile y luego CLIP. La primera ejecución descarga los pesos y puede demorar; se recomienda probar en Colab con GPU. CLIP usa CPU para reservar memoria de GPU.
 6. Examinar entrada preparada y salida, mover el deslizador y revisar el mapa y los parámetros. No interpretar una mejora estética como conservación científica.
-7. Para guardar una prueba con imágenes y JSON, usar la ejecución por consola o la celda de descarga del notebook. La exportación explícita con parámetros desde Gradio y el informe CLIP están pendientes.
+7. Leer el informe orientativo y descargar el ZIP con original, entrada preparada, salida, mapa, informe y parámetros. Si CLIP falla, reintentar solo el análisis visual sin ejecutar nuevamente difusión.
 
 Las capturas del recorrido se incorporarán al completar la revisión visual de la interfaz.
 
@@ -437,7 +437,7 @@ La preparación local comprueba la sintaxis de todas las celdas; no sustituye un
 
 ### Controles de sigma cero y VAE — ejecutados y revisados
 
-**Estado:** la autora ejecutó el notebook en Colab y compartió `controles_sigma0_vae.zip`. Se verificaron los hashes de entradas y salidas y los de siete archivos de código y dependencias de la revisión `e892e443ad44d4f80a6a586438360416b3027221`. Los cinco controles finalizaron sin bloqueos. Las métricas globales, contra la propia entrada y de los cuatro recortes se recalcularon desde los PNG y coinciden con los registros dentro de una tolerancia absoluta de 1e−12. No se ejecutaron nuevas inferencias para revisar el ZIP.
+**Estado:** etapa 3 implementada y documentada; etapa 4 en curso. La interfaz integra SD 1.5 + ControlNet Tile, comparación, diferencias, análisis CLIP y descarga del resultado. Hay evidencia real de difusión en Colab y análisis CLIP en CPU; la prueba interactiva de la interfaz integrada se prepara en etapa 4. Ninguna configuración ensayada demostró mejor fidelidad que conservar la entrada ruidosa.
 
 El VAE codifica la imagen en una representación latente comprimida y la decodifica de nuevo. En SD img2img, la codificación habitual muestrea el posterior; por eso se comparan tanto un control determinista con su moda como uno con muestreo y semilla 42. Se utilizan la misma revisión, precisión y preprocesamiento del pipeline, con su escalado latente y filtro de seguridad. El pipeline completo se carga para reutilizar componentes, pero los controles VAE no ejecutan UNet, scheduler ni ControlNet. [Documentación de AutoencoderKL](https://huggingface.co/docs/diffusers/en/api/models/autoencoderkl).
 
@@ -567,15 +567,15 @@ Se eligió una interfaz web para cargar archivos, ajustar parámetros y comparar
 
 Se adoptó inicialmente como prueba img2img por su integración con Diffusers y la posibilidad de ensayarlo con precisión reducida y entradas pequeñas. La prueba CPU y la ejecución T4 están registradas; la selección definitiva depende de la evaluación de denoising. La consigna admite pipelines img2img y propone SDXL como ejemplo; no exige cambiar de modelo. Si la evaluación muestra alteraciones excesivas, se prevé una prueba acotada de ControlNet Tile sobre SD 1.5 antes de integrarlo.
 
-### Por qué CLIP como análisis previsto
+### Por qué CLIP como análisis descriptivo
 
-Permitiría comparar ambas imágenes con descripciones fijas sin entrenar un modelo adicional. Sus afinidades dependen de las frases y no son mediciones de ruido ni evidencia de autenticidad. La integración y la revisión fijada siguen pendientes. El informe deberá separar los parámetros conocidos por el programa de las observaciones del modelo.
+Compara ambas imágenes con frases fijas sin entrenar un modelo adicional. Sus afinidades dependen de las frases y no son mediciones de ruido ni evidencia de autenticidad. La revisión y el preprocesamiento están fijados. El informe separa parámetros de difusión de afinidades visuales.
 
 ### Principios de Human-AI Interaction aplicados
 
 - **Transparencia:** se identifica la salida como generativa y se muestran parámetros y límites.
 - **Control:** intensidad, pasos, semilla y tamaño son ajustables; la entrada se conserva para comparar.
-- **Explicabilidad:** la interfaz explica qué representa el mapa. El informe del modelo de visión todavía está pendiente.
+- **Explicabilidad:** la interfaz explica qué representa el mapa. El informe CLIP explica las afinidades y sus límites.
 - **Honestidad:** aviso explícito de reconstrucción por IA y documentación de casos con alteraciones.
 - **Manejo de errores:** se comunica la falta de imagen, formatos o profundidad incompatibles y parámetros inválidos. Los indicadores de progreso pueden mejorarse durante la etapa 4.
 
@@ -704,17 +704,17 @@ Las fechas siguientes corresponden al cronograma propuesto por el docente. Las p
 
 **Entregable:** aplicación que procesa imágenes mediante `uv run app.py`, ejecución alternativa en Colab y resultados reproducibles de las cinco pruebas mediante `src/validation.py`.
 
-#### Etapa 3 — Análisis visual y honestidad (10–13 de noviembre) — en desarrollo
+#### Etapa 3 — Análisis visual y honestidad (10–13 de noviembre) — implementada y documentada
 
-La prioridad es integrar CLIP ViT-B/32 y un informe comprensible para Julia. El informe combinará las afinidades con descripciones fijas y una explicación de los parámetros aplicados, sin atribuir a CLIP capacidad para certificar autenticidad o describir por sí solo todos los cambios.
+Integración completada el 15 de noviembre de 2026: CLIP ViT-B/32 e informe comprensible con afinidades de frases fijas. Se mantiene SD + Tile como decisión provisional; optimizar los resultados queda para después.
 
-- [ ] Integrar el análisis de imágenes original y procesada con un modelo de Hugging Face.
-- [ ] Mostrar un informe en lenguaje natural y comunicar sus límites.
-- [ ] Documentar ejemplos reales de aciertos y de fallos o alteraciones de estructuras.
+- [x] Integrar el análisis de imágenes original y procesada con un modelo de Hugging Face.
+- [x] Mostrar un informe en lenguaje natural y comunicar sus límites.
+- [x] Documentar ejemplos reales de aciertos y de fallos o alteraciones de estructuras.
 - [x] Mantener elementos de honestidad ya disponibles: comparación, control de intensidad y advertencias de reconstrucción.
 - [x] Incorporar un mapa de diferencias en `honesty.py`, deslizador en Gradio y advertencias sobre la reconstrucción por IA.
 
-**Primer paso implementado:** comparación sobre imágenes RGB del mismo tamaño, mapa de escala fija y advertencias centralizadas. Las pruebas automatizadas usan valores conocidos y una salida simulada para comprobar la integración sin inferencia. Esto no cierra la etapa 3 ni acredita reducción de ruido. Se ejecutaron y evaluaron dos barridos: SD sin Tile produjo tres salidas válidas y un bloqueo; SD + Tile produjo dos salidas válidas y dos bloqueos. Se calcularon PSNR, SSIM y cuatro recortes comunes: Tile mejora ligeramente frente a SD sin Tile, pero ninguna salida de ambos ensayos supera la fidelidad de la entrada ruidosa. Continúan pendientes la ampliación de la evaluación, CLIP y la descarga explícita con parámetros desde la interfaz principal de Gradio.
+**Cierre implementado:** SD + Tile → comparación → análisis CLIP → informe y descarga. La difusión real del ensayo Colab y el análisis CLIP real sobre sus imágenes están preservados en el [ejemplo versionado](assets/ejemplos/etapa3_tile/README.md). Las pruebas de integración usan difusión simulada; no se presentan como una nueva ejecución GPU. Los dos barridos y los controles VAE muestran límites: ninguna salida válida supera la entrada ruidosa en PSNR/SSIM. Se documenta el acierto técnico y el fallo de restauración, sin inventar un éxito de limpieza. La prueba interactiva del recorrido completo corresponde a la demo de etapa 4.
 
 **Experimento acotado de ruido:** conservar el TIFF y preparar una referencia común; agregar inicialmente un nivel de ruido gaussiano con NumPy y una semilla propia. Procesar esa versión manteniendo fija la semilla del modelo y comparar **referencia preparada → imagen ruidosa → salida procesada**. Registrar dimensiones, canales, normalización, saturación y parámetros. Cambiar un parámetro por vez al explorar pasos e intensidad. Esto evalúa el modelo preentrenado; no lo entrena. La referencia publicada no es una observación científica perfecta y el ruido sintético no representa todo ruido real.
 
@@ -722,9 +722,9 @@ Para una imagen que ya tiene ruido, sin referencia limpia, mostrar entrada y sal
 
 **Criterio de cierre:** carga → difusión → análisis visual → resultados, con explicaciones comprensibles y ejemplos documentados. El análisis visual es obligatorio para la entrega final; las métricas y una línea base clásica son opcionales.
 
-- [ ] Al finalizar la etapa 3, recordar a la autora revisar la interfaz pensando en Julia y evaluar la implementación de un sistema de diseño. Esta revisión queda para después del cierre de la etapa 3, según lo solicitado por la autora.
+- [x] Recordatorio retomado al cerrar la etapa 3: revisar la interfaz pensando en Julia y evaluar un sistema de diseño. Se aborda en etapa 4.
 
-#### Etapa 4 — Documentación y demo (14–16 de noviembre) — pendiente
+#### Etapa 4 — Documentación y demo (14–16 de noviembre) — en curso
 
 - [ ] Mejorar mensajes, errores y estados de carga donde todavía sea necesario.
 - [x] Organizar el README según el template del docente, conservando modelos, licencias y hardware probado.
@@ -744,7 +744,7 @@ Resolver errores finales, completar el formulario de entrega con tiempo y prepar
 
 #### Estrategia de trabajo
 
-**Consigna de referencia:** [Trabajo Integrador 2, notebook original — arquitectura y stack](https://colab.research.google.com/drive/1PjBnThBhDF8x5gYSmbROR_vO7y7AUltV#scrollTo=DRET79IqJzQt). Revisada nuevamente para mantener el alcance: el procesamiento principal debe usar un modelo de difusión de Hugging Face y completar carga → difusión → análisis visual → resultados. Para la sub-tarea B, la guía propone SD/SDXL img2img de baja intensidad y ControlNet Tile como referencias; no exige un modelo específico ni entrenamiento. Los métodos sin difusión solo sirven como comparación y no sustituyen ese requisito. El pendiente obligatorio de etapa 3 es integrar el análisis visual y su informe comprensible; los nuevos experimentos de optimización y las líneas base son complementarios y no deben desplazar ese cierre. Los resultados desfavorables del ensayo se conservan como evidencia de límites, sin atribuirles reducción de ruido lograda.
+**Consigna de referencia:** [Trabajo Integrador 2, notebook original — arquitectura y stack](https://colab.research.google.com/drive/1PjBnThBhDF8x5gYSmbROR_vO7y7AUltV#scrollTo=DRET79IqJzQt). Revisada nuevamente para mantener el alcance: el procesamiento principal debe usar un modelo de difusión de Hugging Face y completar carga → difusión → análisis visual → resultados. Para la sub-tarea B, la guía propone SD/SDXL img2img de baja intensidad y ControlNet Tile como referencias; no exige un modelo específico ni entrenamiento. Los métodos sin difusión solo sirven como comparación y no sustituyen ese requisito. La etapa 3 ya integra el análisis visual y su informe comprensible; los nuevos experimentos de optimización y las líneas base son complementarios y no deben desplazar ese cierre. Los resultados desfavorables del ensayo se conservan como evidencia de límites, sin atribuirles reducción de ruido lograda.
 
 Mantener siempre una versión que funcione. Priorizar difusión y análisis, honestidad sobre las modificaciones, documentación y demo. PSNR, SSIM, LPIPS, filtros clásicos, múltiples modelos, historial, lotes y despliegue público son opcionales. Evitar bloqueos técnicos de más de dos horas: simplificar tamaño o alcance, buscar alternativas y consultar al docente o al grupo cuando corresponda. Antes de ampliar el alcance, revisar: **si se entrega hoy, ¿cumple los requisitos obligatorios?**
 
@@ -764,7 +764,7 @@ La autora completará con sus propias palabras qué aprendió, qué dificultades
 - [Stable Diffusion 1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) y [guía img2img de Diffusers](https://huggingface.co/docs/diffusers/using-diffusers/img2img).
 - [Scheduler DDIM](https://huggingface.co/docs/diffusers/api/schedulers/ddim).
 - [ControlNet Tile, variante ejecutada y evaluada sobre el ensayo gaussiano](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile).
-- [CLIP ViT-B/32, integración prevista](https://huggingface.co/openai/clip-vit-base-patch32) y [licencia del proyecto CLIP](https://github.com/openai/CLIP/blob/main/LICENSE).
+- [CLIP ViT-B/32, análisis implementado](https://huggingface.co/openai/clip-vit-base-patch32) y [licencia del proyecto CLIP](https://github.com/openai/CLIP/blob/main/LICENSE).
 - [Gradio](https://www.gradio.app/docs) y [uv](https://docs.astral.sh/uv/).
 - [Notebook de ejecución del proyecto](colab/ejecutar_en_colab.ipynb).
 - [Registro de imágenes, fuentes, créditos y licencias](assets/ejemplos/README.md).
@@ -781,7 +781,7 @@ Tecnicatura Superior en Ciencia de Datos e Inteligencia Artificial · IFTS 24. M
 
 **Código del proyecto:** pendiente de que la autora seleccione una licencia y agregue el archivo correspondiente. No se declara MIT, Apache ni otra licencia de distribución sin esa decisión.
 
-**Modelos:** Stable Diffusion 1.5 se identifica bajo CreativeML OpenRAIL-M. Para CLIP, previsto y aún no integrado, se referencia la licencia MIT de su proyecto. Las licencias de los modelos son independientes de la del código de esta aplicación.
+**Modelos:** Stable Diffusion 1.5 se identifica bajo CreativeML OpenRAIL-M. Para CLIP integrado se referencia la licencia MIT de su proyecto. Las licencias de los modelos son independientes de la del código de esta aplicación.
 
 **Imágenes:** los originales de ESA/Hubble y sus derivadas deben conservar las atribuciones, enlaces y condiciones documentadas en el [registro de ejemplos](assets/ejemplos/README.md); allí se identifica CC BY 4.0 según las condiciones de la fuente. No se versionan TIFF originales, pesos, credenciales ni resultados locales.
 
@@ -882,3 +882,7 @@ Artefactos locales: [resumen de resultados](outputs/etapa2/resumen.json) y [comp
 ---
 
 **Trabajo Integrador N.º 2 · IFTS 24 · 2026**
+
+### Evidencia versionada del cierre de etapa 3
+
+[Comparación real y análisis CLIP](assets/ejemplos/etapa3_tile/README.md), con imágenes, registro original, frases, afinidades y hashes. [Detalle de implementación y límites](docs/analisis_visual.md). Se distingue completar el recorrido técnico de demostrar reducción de ruido.
