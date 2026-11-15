@@ -1,0 +1,25 @@
+/* Base visual compartida; los controles nativos conservan teclado y foco. */
+.gradio-container {
+  --astro-espacio: 16px;
+  --astro-radio: 12px;
+  --astro-acento: #0f766e;
+  max-width: 1120px !important;
+  margin: auto;
+  padding: 24px !important;
+  line-height: 1.55;
+}
+#cabecera { padding: var(--astro-espacio) 0; }
+#cabecera h1 { letter-spacing: -0.04em; font-size: clamp(2rem, 5vw, 3rem); }
+#aviso-reconstruccion {
+  border-left: 4px solid var(--astro-acento);
+  border-radius: var(--astro-radio);
+  padding: var(--astro-espacio);
+  background: var(--block-background-fill);
+}
+.gradio-container button:focus-visible, .gradio-container a:focus-visible {
+  outline: 3px solid var(--astro-acento);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .gradio-container { padding: 12px !important; }
+}
