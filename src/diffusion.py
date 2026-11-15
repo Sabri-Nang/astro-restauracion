@@ -191,6 +191,63 @@ def run_diffusion(
     return image, restored, metadata
 
 
+def reconstruct_vae(
+    path: str | Path, *, posterior: str = "sample", seed: int = 42,
+    max_size: int = 256, device: str = "cuda",
+) -> tuple[Image.Image, Image.Image, dict]:
+    """Control de codificación/decodificación VAE, sin ejecutar UNet ni scheduler.
+
+    `sample` utiliza el muestreo posterior que usa img2img; `mode` toma su moda
+    determinista. Se conserva el escalado latente y el filtro del pipeline.
+    Este control no descompone de forma aditiva el error de difusión.
+    """
+    if posterior not in ("sample", "mode"):
+        raise ValueError("El posterior VAE debe ser sample o mode.")
+    if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed <= 2**32 - 1:
+        raise ValueError("La semilla debe ser un entero entre 0 y 4294967295.")
+    image = prepare_image(path, max_size)
+    with Path(path).open("rb") as source:
+        source_hash = hashlib.file_digest(source, "sha256").hexdigest()
+    started = perf_counter()
+    pipeline = load_pipeline(device)
+    load_seconds = perf_counter() - started
+
+    import torch
+
+    generator = torch.Generator(device=pipeline.device).manual_seed(seed) if posterior == "sample" else None
+    started = perf_counter()
+    with torch.inference_mode():
+        tensor = pipeline.image_processor.preprocess(image).to(device=pipeline.device, dtype=pipeline.vae.dtype)
+        distribution = pipeline.vae.encode(tensor).latent_dist
+        latent = distribution.sample(generator=generator) if posterior == "sample" else distribution.mode()
+        scale = pipeline.vae.config.scaling_factor
+        latent = latent * scale
+        decoded = pipeline.vae.decode(latent / scale, return_dict=False, generator=generator)[0]
+        decoded, flags = pipeline.run_safety_checker(decoded, pipeline.device, pipeline.vae.dtype)
+        if flags is not None and any(flags):
+            raise SafetyFilterBlockedError("El filtro de seguridad bloqueó el control VAE; no se guardó la salida.")
+        restored = pipeline.image_processor.postprocess(decoded, output_type="pil", do_denormalize=[True])[0]
+    if restored.mode != "RGB" or restored.size != image.size:
+        raise ValueError("El control VAE debe conservar el tamaño y modo RGB de entrada.")
+    metadata = {
+        "tipo": "control_reconstruccion_vae_sin_difusion", "modelo": MODEL_ID,
+        "revision": MODEL_REVISION, "licencia": MODEL_LICENSE,
+        "entrada": Path(path).name, "sha256_entrada": source_hash,
+        "dimensiones_preparadas": list(image.size), "posterior_vae": posterior,
+        "semilla_vae": seed if posterior == "sample" else None,
+        "scaling_factor": float(scale), "normalizacion": "Preprocesador del pipeline: RGB a [-1, 1]",
+        "dispositivo": str(pipeline.device), "precision_vae": str(pipeline.vae.dtype),
+        "unet_ejecutada": False, "scheduler_ejecutado": False, "pasos_efectivos": 0,
+        "controlnet_ejecutado": False, "filtro_seguridad": "Mismo filtro del pipeline, activo",
+        "segundos_carga_o_acceso_cache_memoria": round(load_seconds, 3),
+        "segundos_reconstruccion_y_filtro": round(perf_counter() - started, 3),
+        "python": platform.python_version(), "sistema": platform.platform(),
+        "versiones": {name: version(name) for name in ("torch", "diffusers", "transformers", "pillow")},
+        "advertencia": "Control de pérdida de representación; no es entrenamiento ni prueba de eliminación de ruido. La referencia publicada puede tener ruido propio.",
+    }
+    return image, restored, metadata
+
+
 def main() -> None:
     """Guarda una prueba y sus parámetros sin modificar la imagen de origen."""
     parser = argparse.ArgumentParser(description=__doc__)
