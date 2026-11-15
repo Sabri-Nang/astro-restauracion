@@ -81,8 +81,8 @@ científica de una futura salida generativa.
 La referencia y la entrada ruidosa de este ensayo ahora se conservan también
 en [`../ruido_gaussiano/`](../ruido_gaussiano/README.md), con PNG, registro original
 y metadata completa para reproducir el ruido. Esa carpeta no está ignorada por
-Git. Los resultados de difusión permanecen en `outputs/`; conservar el par no
-implica que se haya ejecutado ControlNet Tile ni que se haya validado su eficacia.
+Git. Los resultados de difusión permanecen en `outputs/`. Posteriormente se
+ejecutó ControlNet Tile sobre el mismo par; su revisión se documenta a continuación.
 
 Se probaron las intensidades 0,10, 0,15, 0,20 y 0,25 en el laboratorio de Colab
 con referencia de 256 × 192, sigma 0,03, semilla de ruido 123, semilla del modelo
@@ -111,6 +111,28 @@ Licencia: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), según las
 Modificaciones: conversión a RGB, reducción LANCZOS, adición de ruido en la
 copia y difusión en las salidas válidas. Al compartir, conservar los créditos
 y aclarar que las salidas generativas no son observaciones verificadas.
+
+### Revisión de ControlNet Tile sobre el mismo par
+
+La autora compartió el ZIP de una ejecución real de Colab con revisión de código
+`e4c6ba6`. Se verificaron sus hashes y se recalcularon las métricas. Tile produjo
+salidas válidas a 0,10 y 0,15; 0,20 y 0,25 fueron bloqueadas por el filtro de
+contenido. Las salidas válidas mejoran ligeramente PSNR y SSIM frente a SD sin
+Tile, pero quedan por debajo de la entrada ruidosa frente a la referencia.
+
+Se conserva el ZIP y la revisión en
+`outputs/etapa3/controlnet_tile_colab_20261115T033837Z/`, excluidos de Git.
+`revision_local/comparacion_sd_tile_regiones.png` reúne los mismos recortes de
+64 × 64 de referencia, ruido, SD y Tile, ampliados ×3 con vecino más cercano,
+sin ajuste de contraste. La lámina conserva el crédito, la fuente y la licencia.
+
+Fuente y licencia: https://esahubble.org/images/potw1803a/ ·
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), según las
+[condiciones de ESA/Hubble](https://esahubble.org/copyright/).
+Crédito: **NASA, ESA, and J. Comerford (University of Colorado-Boulder)**.
+Modificaciones: RGB, reducción, ruido añadido, difusión condicionada por la misma
+entrada ruidosa y recortes ampliados para visualizar. No se utilizó la referencia
+como condición de generación ni se acredita autenticidad científica.
 
 ## Incorporación de nuevas imágenes
 

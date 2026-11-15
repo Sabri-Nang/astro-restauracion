@@ -6,7 +6,7 @@
 
 **Estado:** etapa 2 completada y etapa 3 en desarrollo. Están implementados difusión imagen a imagen, comparación y mapa de diferencias. Se probaron cuatro intensidades sobre la misma entrada gaussiana en Colab: 0,10, 0,15 y 0,20 produjeron salidas válidas; 0,25 fue bloqueada por el filtro de seguridad del pipeline. La evaluación inicial con PSNR, SSIM y recortes muestra que ninguna salida válida mejora la fidelidad respecto de la entrada ruidosa en ese ensayo. La generalización no está evaluada. Análisis con CLIP y exportación explícita con parámetros desde la interfaz principal siguen pendientes.
 
-**Siguiente variante preparada:** SD 1.5 + ControlNet Tile, implementada por consola y con notebook Colab; su inferencia real todavía no se ejecutó. La referencia y la entrada gaussiana se conservan en [`assets/ruido_gaussiano`](assets/ruido_gaussiano/README.md), con metadata y verificación de reproducción.
+**Última variante evaluada:** SD 1.5 + ControlNet Tile se ejecutó en Colab sobre la misma entrada gaussiana. Las intensidades 0,10 y 0,15 produjeron salidas; 0,20 y 0,25 fueron bloqueadas por el filtro de contenido. Tile mejora ligeramente PSNR y SSIM frente a SD sin Tile, pero ambas salidas válidas siguen por debajo de la entrada ruidosa. La referencia y la entrada gaussiana se conservan en [`assets/ruido_gaussiano`](assets/ruido_gaussiano/README.md), con metadata y verificación de reproducción.
 
 [Repositorio en GitHub](https://github.com/Sabri-Nang/astro-restauracion) · [Notebook de ejecución](colab/ejecutar_en_colab.ipynb) · [Procedencia de las imágenes](assets/ejemplos/README.md)
 
@@ -113,7 +113,7 @@ La comparación utiliza entrada preparada y salida del mismo tamaño. El desliza
 - Deslizador de comparación y mapa de diferencias absolutas entre entrada preparada y salida; advertencia explícita de reconstrucción por IA.
 - Generación gaussiana reproducible en `src/noise.py` y ensayo de dos fases en `src/experiment.py`, con hashes, semilla propia y registros separados.
 - Evaluación del barrido con PSNR y SSIM contra la referencia sintética verificada en `src/evaluation.py`; exporta JSON, CSV y recortes ampliados opcionales sin ejecutar inferencia.
-- Variante opcional SD 1.5 + ControlNet Tile en `src/diffusion.py`, barrido de cuatro intensidades y notebook específico; verificada con simulaciones, sin resultados reales de Tile todavía.
+- Variante opcional SD 1.5 + ControlNet Tile en `src/diffusion.py`, barrido de cuatro intensidades y notebook específico; ejecutada en Colab con dos salidas válidas y dos bloqueos, evaluada contra la misma referencia.
 - Conservación del par gaussiano en `assets/ruido_gaussiano/` y reproducción verificable por `src/noise_assets.py`.
 - Módulo de análisis preparado, sin procesamiento implementado.
 - Notebook de Colab con una prueba GPU registrada por la autora y acceso a Gradio desde el enlace público confirmado por ella.
@@ -124,7 +124,7 @@ La comparación utiliza entrada preparada y salida del mismo tamaño. El desliza
 ### Pendiente de implementación o validación
 
 - Ampliar la evaluación a otras imágenes y condiciones; el primer barrido no mejoró PSNR ni SSIM respecto de la entrada ruidosa y el caso 0,25 quedó bloqueado por el filtro de seguridad.
-- Ejecutar el notebook de ControlNet Tile con CUDA y evaluar el resultado sobre la misma entrada conservada; el enlace Gradio anterior dejó de estar disponible.
+- Ampliar los controles de SD y Tile: la primera ejecución Tile no superó la entrada ruidosa. Están pendientes el diagnóstico VAE/sigma cero y la evaluación de otras condiciones; CLIP sigue siendo el pendiente obligatorio de etapa 3.
 - Evaluación de la eficacia de Stable Diffusion para este problema; no se garantiza que sea adecuado.
 - Análisis con CLIP.
 - Filtro bilateral como mejora opcional; PSNR y SSIM ya disponibles por consola para el barrido con referencia conocida.
@@ -177,7 +177,7 @@ Se propone una aplicación web desarrollada en Gradio que integre carga de imág
 
 El modelo de la prueba inicial es [`stable-diffusion-v1-5/stable-diffusion-v1-5`](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5), revisión fija `451f4fe16113bff5a5d2269ed5ad43b0592e9a14`, bajo licencia **CreativeML OpenRAIL-M**. Se utiliza `StableDiffusionImg2ImgPipeline` con scheduler DDIM, pesos `fp16` en formato Safetensors y precisión de ejecución `bfloat16` en CPU o `float16` en CUDA. Se emplea precisión reducida para limitar la memoria de los pesos; su rendimiento depende del hardware.
 
-La variante preparada agrega [`lllyasviel/control_v11f1e_sd15_tile`](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile), revisión `3f877705c37010b7221c3d10743307d6b5b6efac`, bajo **CreativeML OpenRAIL-M** según su ficha. Usa `StableDiffusionControlNetImg2ImgPipeline` con la misma imagen ruidosa como entrada y condición, sin acceso a la referencia para generar. El checkpoint oficial ofrece `diffusion_pytorch_model.bin`, sin variante Safetensors en esa revisión; se carga desde el repositorio oficial fijado y queda en la caché excluida de Git. No se descargaron esos pesos ni se realizó inferencia Tile para verificar la implementación. Su incorporación no garantiza conservación de estructuras ni mejora de denoising.
+La variante agrega [`lllyasviel/control_v11f1e_sd15_tile`](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile), revisión `3f877705c37010b7221c3d10743307d6b5b6efac`, bajo **CreativeML OpenRAIL-M** según su ficha. Usa `StableDiffusionControlNetImg2ImgPipeline` con la misma imagen ruidosa como entrada y condición, sin acceso a la referencia para generar. El checkpoint oficial ofrece `diffusion_pytorch_model.bin`, sin variante Safetensors en esa revisión; se carga desde el repositorio oficial fijado y queda en la caché excluida de Git. La implementación se verificó inicialmente sin descargar pesos, mediante simulaciones; posteriormente la autora compartió una ejecución real de Colab, revisada mediante sus imágenes y registros. Su incorporación no garantiza conservación de estructuras ni mejora de denoising.
 
 **No es un modelo especializado en restauración astronómica** y su utilidad para este problema debe demostrarse experimentalmente. El parámetro de intensidad controla la transformación generativa; no expresa directamente cuánto ruido astronómico se elimina. Una intensidad baja no garantiza la conservación de las estructuras originales. La primera prueba de carga e inferencia no equivale a validar el denoising.
 
@@ -389,11 +389,24 @@ uv run --locked python -m src.noise_assets reproduce --metadata assets/ruido_gau
 
 La salida debe ser nueva. El original y los activos no se sobrescriben. Intensidad, pasos y semilla del modelo no intervienen en la generación del ruido y se registran por separado en cada restauración.
 
-### SD 1.5 + ControlNet Tile — preparado, inferencia real pendiente
+### SD 1.5 + ControlNet Tile — ejecutado y evaluado en un caso
 
-Hasta ahora las inferencias evaluadas usaron **SD 1.5 img2img sin ControlNet**. La variante Tile ya está implementada en `src/diffusion.py` y conectada con `src.experiment restore` y `sweep`. Las pruebas usan una salida simulada y una carga simulada de pesos; no se atribuyen resultados de restauración a esta variante todavía. El antiguo enlace Gradio devolvió HTTP 404 al preparar este avance y esa versión del laboratorio tampoco exponía la variante Tile.
+El primer barrido evaluó **SD 1.5 img2img sin ControlNet**. Posteriormente se ejecutó la variante Tile en Colab y la autora compartió `ensayo_controlnet_tile.zip`. La revisión confirmó los hashes de entrada y salida, recalculó las métricas y comparó con el ensayo anterior. El ZIP registra código de la revisión `e4c6ba6121feafa362d9d8ab9a98e247e9177ab8`; los hashes de ocho archivos de código y dependencias coinciden con esa revisión. La variante está implementada en `src/diffusion.py` y conectada con `src.experiment restore` y `sweep`.
 
 Se mantienen sigma 0,03, semilla de ruido 123, referencia de 256 × 192, 30 pasos configurados, semilla del modelo 42, DDIM, guidance 1 e intensidades **0,10 / 0,15 / 0,20 / 0,25**. ControlNet usa fuerza **1,0**, inicio **0**, fin **1** y `guess_mode=False`. La condición es la misma imagen ruidosa, sin prefiltrado ni redimensionamiento adicional; la referencia se usa exclusivamente para evaluar. No se realiza superresolución ni entrenamiento. Estos valores son un punto inicial para comparar, sin eficacia validada.
+
+**Resultados verificados de Tile**, calculados contra la misma referencia sintética:
+
+- Entrada ruidosa: PSNR **31,2381 dB**, SSIM **0,637538**.
+- Tile 0,10: PSNR **28,4258 dB**, SSIM **0,552753**. Frente a SD sin Tile a 0,10: **+0,3356 dB** y **+0,008634** de SSIM. Frente a la entrada ruidosa: **−2,8123 dB** y **−0,084784** de SSIM.
+- Tile 0,15: PSNR **27,6885 dB**, SSIM **0,533936**. Frente a SD sin Tile a 0,15: **+0,4586 dB** y **+0,011346** de SSIM. Frente a la entrada ruidosa: **−3,5495 dB** y **−0,103602** de SSIM.
+- Tile 0,20 y 0,25: salidas bloqueadas por el filtro de seguridad; sin imágenes válidas ni métricas. Sin Tile, solo 0,25 había quedado bloqueada en este barrido.
+
+**Interpretación:** Tile 0,10 es la más cercana a la referencia entre las salidas de difusión probadas, pero su MSE sigue siendo **1,91 veces** el de la entrada ruidosa. Tile mejora ligeramente las dos métricas frente a SD sin Tile también en los cuatro recortes, pero sigue por debajo de la entrada ruidosa en todos ellos. La inspección muestra cambios de textura de fondo, contorno y brillo en las galaxias y alargamiento de la fuente puntual. No se acredita reducción de ruido con conservación de señal en estas condiciones ni se atribuye autenticidad científica a las estructuras. La comparación abarca una imagen, una fuerza de control y unas semillas; no constituye una validación general ni una comparación estadística de modelos.
+
+Las métricas recalculadas coinciden con las del ZIP dentro de una tolerancia absoluta de 1e−12; los PNG de entrada coinciden con los activos y sus píxeles con los del ensayo sin Tile. El ZIP registra CUDA y `torch.float16`; no incluye el nombre concreto de la GPU, por lo que no se atribuye un hardware idéntico entre sesiones. Los estados históricos «evaluación pendiente» de los registros originales se preservan y la revisión se guarda por separado.
+
+Evidencias locales: [revisión y diferencias de métricas](outputs/etapa3/controlnet_tile_colab_20261115T033837Z/revision_local/comparacion.json) y [recortes comparativos SD/Tile](outputs/etapa3/controlnet_tile_colab_20261115T033837Z/revision_local/comparacion_sd_tile_regiones.png). La carpeta conserva el ZIP original y sus archivos extraídos, sin ejecutar contenido del archivo adjunto. SHA-256 del ZIP: `61b7be1b422a5add57821de5d57d6d515b2d6e4df55de0459b8f2bd325102697`.
 
 En una sesión CUDA con los archivos del proyecto:
 
@@ -647,7 +660,7 @@ La prioridad es integrar CLIP ViT-B/32 y un informe comprensible para Julia. El 
 - [x] Mantener elementos de honestidad ya disponibles: comparación, control de intensidad y advertencias de reconstrucción.
 - [x] Incorporar un mapa de diferencias en `honesty.py`, deslizador en Gradio y advertencias sobre la reconstrucción por IA.
 
-**Primer paso implementado:** comparación sobre imágenes RGB del mismo tamaño, mapa de escala fija y advertencias centralizadas. Las pruebas automatizadas usan valores conocidos y una salida simulada para comprobar la integración sin inferencia. Esto no cierra la etapa 3 ni acredita reducción de ruido. El segundo paso dispone de preparación gaussiana y ejecución explícita de difusión en `colab/experimento_ruido_gaussiano.ipynb`; se ejecutó un barrido real de cuatro intensidades en el laboratorio de Colab, con tres salidas válidas y un bloqueo del filtro de seguridad. Se evaluaron PSNR, SSIM y cuatro recortes del caso: ninguna salida SD supera la fidelidad de la entrada ruidosa. ControlNet Tile ya está implementado para un nuevo barrido por consola y notebook, con inferencia real pendiente. Continúan pendientes la ampliación de la evaluación, CLIP y la descarga explícita con parámetros desde la interfaz principal de Gradio.
+**Primer paso implementado:** comparación sobre imágenes RGB del mismo tamaño, mapa de escala fija y advertencias centralizadas. Las pruebas automatizadas usan valores conocidos y una salida simulada para comprobar la integración sin inferencia. Esto no cierra la etapa 3 ni acredita reducción de ruido. Se ejecutaron y evaluaron dos barridos: SD sin Tile produjo tres salidas válidas y un bloqueo; SD + Tile produjo dos salidas válidas y dos bloqueos. Se calcularon PSNR, SSIM y cuatro recortes comunes: Tile mejora ligeramente frente a SD sin Tile, pero ninguna salida de ambos ensayos supera la fidelidad de la entrada ruidosa. Continúan pendientes la ampliación de la evaluación, CLIP y la descarga explícita con parámetros desde la interfaz principal de Gradio.
 
 **Experimento acotado de ruido:** conservar el TIFF y preparar una referencia común; agregar inicialmente un nivel de ruido gaussiano con NumPy y una semilla propia. Procesar esa versión manteniendo fija la semilla del modelo y comparar **referencia preparada → imagen ruidosa → salida procesada**. Registrar dimensiones, canales, normalización, saturación y parámetros. Cambiar un parámetro por vez al explorar pasos e intensidad. Esto evalúa el modelo preentrenado; no lo entrena. La referencia publicada no es una observación científica perfecta y el ruido sintético no representa todo ruido real.
 
@@ -696,7 +709,7 @@ La autora completará con sus propias palabras qué aprendió, qué dificultades
 - [Consigna y template del docente](https://colab.research.google.com/drive/1PjBnThBhDF8x5gYSmbROR_vO7y7AUltV#scrollTo=1racjP4M9DZH).
 - [Stable Diffusion 1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) y [guía img2img de Diffusers](https://huggingface.co/docs/diffusers/using-diffusers/img2img).
 - [Scheduler DDIM](https://huggingface.co/docs/diffusers/api/schedulers/ddim).
-- [ControlNet Tile, variante implementada con inferencia y evaluación reales pendientes](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile).
+- [ControlNet Tile, variante ejecutada y evaluada sobre el ensayo gaussiano](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile).
 - [CLIP ViT-B/32, integración prevista](https://huggingface.co/openai/clip-vit-base-patch32) y [licencia del proyecto CLIP](https://github.com/openai/CLIP/blob/main/LICENSE).
 - [Gradio](https://www.gradio.app/docs) y [uv](https://docs.astral.sh/uv/).
 - [Notebook de ejecución del proyecto](colab/ejecutar_en_colab.ipynb).
