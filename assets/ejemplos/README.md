@@ -134,6 +134,31 @@ Modificaciones: RGB, reducción, ruido añadido, difusión condicionada por la m
 entrada ruidosa y recortes ampliados para visualizar. No se utilizó la referencia
 como condición de generación ni se acredita autenticidad científica.
 
+### Controles VAE y sigma cero sobre el mismo par
+
+La autora compartió `controles_sigma0_vae.zip`, generado en Colab con revisión
+`e892e44`. Se verificaron código registrado, hashes, métricas globales y
+regionales desde los PNG. Los cinco controles produjeron salidas válidas.
+El VAE por sí solo ya altera la referencia y empeora PSNR/SSIM cuando procesa
+la copia ruidosa. SD y Tile también alteran la entrada sin ruido artificial.
+Estos resultados no atribuyen porcentajes causales a cada etapa ni se generalizan.
+
+Los archivos se conservan en
+`outputs/etapa3/controles_sigma0_vae_colab_20261115T041012Z/`, excluidos de Git.
+Las láminas `revision_local/comparacion_vae_regiones.png` y
+`revision_local/comparacion_sigma0_regiones.png` usan los mismos cuatro recortes
+de 64 × 64 ampliados ×3 por vecino más cercano, sin ajustar contraste.
+
+Fuente: https://esahubble.org/images/potw1803a/ ·
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), según las
+[condiciones de ESA/Hubble](https://esahubble.org/copyright/).
+Crédito: **NASA, ESA, and J. Comerford (University of Colorado-Boulder)**.
+Modificaciones: preparación RGB, reducción, ruido en la copia de sigma 0,03,
+reconstrucción VAE o difusión, y recortes ampliados solo para visualizar.
+En el control Tile sigma cero, la referencia preparada es la propia entrada y
+condición. Esto estudia su alteración, sin simular una restauración con una guía
+limpia externa ni acreditar autenticidad científica.
+
 ## Incorporación de nuevas imágenes
 
 ### Revisión del ensayo guardado en Colab
