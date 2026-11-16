@@ -3,11 +3,12 @@
 import math
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 
 DISCLAIMER = (
-    "Imagen reconstruida por IA. El modelo puede borrar o inventar estructuras. "
+    "Tu original se conserva. Esta imagen fue reconstruida por IA y puede contener "
+    "detalles generados o haber perdido otros. Revisá los cambios antes de compartirla. "
     "Esta prueba no demuestra reducción de ruido ni autenticidad científica. "
     "La intensidad controla la transformación generativa, no el ruido eliminado."
 )
@@ -17,6 +18,20 @@ DIFFERENCE_NOTICE = (
     "sin amplificar el contraste. Muestra modificaciones de píxeles; no distingue "
     "ruido eliminado, detalles perdidos o estructuras inventadas."
 )
+HIGHLIGHT_NOTICE = (
+    "Amarillo: zonas donde cambiaron más los píxeles y conviene comparar con la foto de entrada. "
+    "No identifica invenciones: también puede marcar ruido modificado o detalles perdidos. "
+    "Una zona sin marcar tampoco garantiza que sea fiel a la observación."
+)
+HIGHLIGHT_SETTINGS = {
+    "criterio": "media RGB de diferencias absolutas, redondeada a 8 bits, con promedio local de 5 × 5",
+    "radio_promedio_local": 2,
+    "umbral_fijo": 12,
+    "escala": "0–255",
+    "color_rgb": [255, 176, 0],
+    "opacidad": 0.6,
+    "interpretacion": HIGHLIGHT_NOTICE,
+}
 
 
 def difference_map(original: Image.Image, processed: Image.Image) -> Image.Image:
@@ -34,6 +49,23 @@ def difference_map(original: Image.Image, processed: Image.Image) -> Image.Image
     after = np.asarray(processed, dtype=np.int16)
     differences = np.abs(after - before).mean(axis=2)
     return Image.fromarray(np.rint(differences).astype(np.uint8))
+
+
+def highlight_changes(original: Image.Image, processed: Image.Image) -> Image.Image:
+    """Superpone amarillo en cambios de píxeles; no estima autenticidad.
+
+    El promedio local agrupa cambios cercanos para no cubrir la foto con
+    puntos aislados. El umbral y la opacidad son constantes entre imágenes.
+    No se normaliza por el máximo ni se utilizan probabilidades de CLIP.
+    Las imágenes de entrada se conservan intactas.
+    """
+    raw = difference_map(original, processed)
+    differences = np.asarray(raw.filter(ImageFilter.BoxBlur(HIGHLIGHT_SETTINGS["radio_promedio_local"])))
+    pixels = np.asarray(processed, dtype=np.float32)
+    alpha = (differences >= HIGHLIGHT_SETTINGS["umbral_fijo"])[..., None] * HIGHLIGHT_SETTINGS["opacidad"]
+    color = np.asarray(HIGHLIGHT_SETTINGS["color_rgb"], dtype=np.float32)
+    highlighted = pixels * (1 - alpha) + color * alpha
+    return Image.fromarray(np.rint(highlighted).astype(np.uint8))
 
 
 def amplified_difference(raw: Image.Image, gain: float = 16) -> tuple[Image.Image, dict]:
