@@ -1,0 +1,51 @@
+{
+  "tipo": "experimento_controlado_gaussiano",
+  "fase": "ruido_preparado_sin_inferencia",
+  "creado_utc": "2026-11-16T02:23:13.475351+00:00",
+  "entrada_original": "heic1520a.tif",
+  "sha256_original": "1eefbb31a20be97a91e61b44d721ea207718f93f46e64703968a4115254cef94",
+  "procedencia_declarada": {
+    "imagen": "heic1520a.tif",
+    "fuente": "https://esahubble.org/images/heic1520a/",
+    "credito": "NASA, ESA, Hubble Heritage Team. Conservar este crédito completo.",
+    "licencia": "CC BY 4.0",
+    "url_licencia": "https://creativecommons.org/licenses/by/4.0/",
+    "registro": "assets/ejemplos/README.md",
+    "modificaciones": "Copia RGB de 8 bits, reducción LANCZOS a lado máximo 256 y múltiplos de ocho, sin recorte ni ampliación; ruido gaussiano añadido después."
+  },
+  "dimensiones": [
+    256,
+    168
+  ],
+  "modo": "RGB",
+  "python": "3.12.10",
+  "pillow": "12.3.0",
+  "lado_maximo": 256,
+  "preparacion": "RGB 8 bits, LANCZOS, sin recorte ni ampliación, lados múltiplos de ocho",
+  "ruido": {
+    "tipo": "gaussiano_aditivo",
+    "media_teorica": 0.0,
+    "sigma_normalizada": 0.03,
+    "sigma_equivalente_8bits": 7.6499999999999995,
+    "semilla_ruido": 123,
+    "generador": "PCG64",
+    "numpy": "2.5.4",
+    "escala_calculo": [
+      0.0,
+      1.0
+    ],
+    "canales": "RGB; muestra independiente por píxel y canal",
+    "aplicacion": "Después del redimensionamiento; sobre valores RGB publicados, sin linealización",
+    "recorte": "clip [0, 1] antes de redondear al entero más cercano y convertir a uint8",
+    "fraccion_muestras_recortadas_inferior": 0.028994605654761904,
+    "fraccion_muestras_recortadas_superior": 9.300595238095238e-05,
+    "advertencia": "Degradación sintética; no representa una calibración física del sensor."
+  },
+  "archivos_sha256": {
+    "referencia_preparada.png": "dfebfc315c8582b2a1bf679b55735427939bfe4b6385ead83eaeff71a8317b8a",
+    "entrada_ruidosa.png": "a78a3f9086097d3756bd14922c8066ed2189b9ccb51ee6c7911c64abed1bcc38"
+  },
+  "alcance_referencia": "Referencia para esta degradación sintética; no se supone libre de ruido ni científicamente perfecta.",
+  "evaluacion_visual": "Pendiente: revisar fondo, estrellas tenues y estructuras difusas antes de ejecutar difusión.",
+  "inferencia_ejecutada": false
+}

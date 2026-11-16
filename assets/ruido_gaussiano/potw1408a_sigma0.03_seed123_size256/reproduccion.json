@@ -1,0 +1,105 @@
+{
+  "tipo": "activo_ruido_gaussiano_reproducible",
+  "original": {
+    "archivo": "potw1408a.tif",
+    "sha256": "788175a6a5ad00a1130b24198b9172380d4d591b91e8f66a7360b7273a9c9cc2",
+    "formato": "TIFF",
+    "dimensiones": [
+      1502,
+      739
+    ],
+    "modo": "RGB"
+  },
+  "procedencia": {
+    "imagen": "potw1408a.tif",
+    "fuente": "https://esahubble.org/images/potw1408a/",
+    "credito": "NASA, ESA, and D. Gouliermis (University of Heidelberg). Acknowledgement: Luca Limatola. Conservar el crédito y el reconocimiento completos.",
+    "licencia": "CC BY 4.0",
+    "url_licencia": "https://creativecommons.org/licenses/by/4.0/",
+    "registro": "assets/ejemplos/README.md",
+    "modificaciones": "Copia RGB de 8 bits, reducción LANCZOS a lado máximo 256 y múltiplos de ocho, sin recorte ni ampliación; ruido gaussiano añadido después."
+  },
+  "dimensiones": [
+    256,
+    120
+  ],
+  "modo": "RGB",
+  "bits_por_canal": 8,
+  "orden_arreglo": "alto, ancho, RGB; C",
+  "archivos": {
+    "referencia_preparada.png": {
+      "sha256_archivo": "d1d0b287821f82bd38db7a5f500799aa813fc6f84911cd3c115012c8d179bb2a",
+      "sha256_pixeles_rgb": "d3fcce1cd932669909f9e08f5a910893f5bf8810834ae77db0ca43838ad1d0aa"
+    },
+    "entrada_ruidosa.png": {
+      "sha256_archivo": "4838848585b3e3891c4aa600c3e29a96c17f44ca14a04f8dacc203a73ac2a1e2",
+      "sha256_pixeles_rgb": "aa431aa5775264e87ada9c0f168fb88de99b0b8502125d42ee8c0467055cdfa3"
+    }
+  },
+  "ruido": {
+    "tipo": "gaussiano_aditivo",
+    "media_teorica": 0.0,
+    "sigma_normalizada": 0.03,
+    "sigma_equivalente_8bits": 7.6499999999999995,
+    "semilla_ruido": 123,
+    "generador": "PCG64",
+    "numpy": "2.5.4",
+    "escala_calculo": [
+      0.0,
+      1.0
+    ],
+    "canales": "RGB; muestra independiente por píxel y canal",
+    "aplicacion": "Después del redimensionamiento; sobre valores RGB publicados, sin linealización",
+    "recorte": "clip [0, 1] antes de redondear al entero más cercano y convertir a uint8",
+    "fraccion_muestras_recortadas_inferior": 0.022471788194444446,
+    "fraccion_muestras_recortadas_superior": 0.0006618923611111111,
+    "advertencia": "Degradación sintética; no representa una calibración física del sensor."
+  },
+  "preparacion": {
+    "orientacion": "ImageOps.exif_transpose antes de RGB",
+    "conversion": "Pillow convert('RGB')",
+    "lado_maximo": 256,
+    "interpolacion": "Pillow Image.Resampling.LANCZOS",
+    "escala": "min(1, lado_maximo / max(ancho, alto))",
+    "dimensiones_finales": "int(lado_original * escala) // 8 * 8 para cada lado",
+    "recorte_espacial": false,
+    "ampliacion": false,
+    "linealizacion_color": false,
+    "ruido_antes_o_despues": "Después de redimensionar; usar la referencia conservada"
+  },
+  "algoritmo_ruido": {
+    "arreglo": "np.asarray(referencia, dtype=np.float64) / 255.0",
+    "rng": "np.random.Generator(np.random.PCG64(semilla))",
+    "muestreo": "rng.normal(loc=0.0, scale=sigma, size=(alto, ancho, 3))",
+    "suma": "referencia_normalizada + ruido; muestras independientes por píxel y canal",
+    "recorte": "np.clip(suma, 0.0, 1.0)",
+    "cuantizacion": "np.rint(recorte * 255.0).astype(np.uint8)",
+    "redondeo": "Al entero más cercano; empate al par (np.rint)"
+  },
+  "codificacion_salida": {
+    "formato": "PNG",
+    "compress_level": 6,
+    "optimize": false,
+    "metadata_png_adicional": false
+  },
+  "entorno_preparacion": {
+    "python": "3.12.10",
+    "numpy": "2.5.4",
+    "pillow": "12.3.0"
+  },
+  "entorno_verificacion": {
+    "python": "3.12.10",
+    "numpy": "2.5.4",
+    "pillow": "12.3.0",
+    "zlib": "1.3.1"
+  },
+  "codigo_sha256": {
+    "diffusion.py": "71b1a2cc780c20334ec070410982511a1903332b496db1b5bba3d36b5cd5f3cb",
+    "noise.py": "3e3404069a2ffcf488874386bbe5d2dd61dd9695052c26856bb52973edb1f4e0",
+    "experiment.py": "547a8cd5e93b70aa7076d57df5d30f80ec2cffc936d0e461907f923c11ae10c0",
+    "noise_assets.py": "525c094b160e832175caf9f94e24d9746f2158df383d7dbf6910fceac8f348fc"
+  },
+  "pixeles_reproducidos_verificados": true,
+  "alcance": "Degradación RGB sintética, sin calibración de sensor. La referencia puede tener ruido propio.",
+  "nota_hashes": "El hash de píxeles identifica los datos RGB; el hash PNG también depende de codificación, metadata y versiones de compresión."
+}
