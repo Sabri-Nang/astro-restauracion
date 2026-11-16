@@ -5,6 +5,41 @@ intensidades procesaron **una misma imagen ruidosa**, no cuatro degradaciones.
 Las copias PNG de Colab pueden tener otra codificación y hash de archivo, pero
 se verificó que sus píxeles RGB coinciden con los de este par.
 
+El 15 de noviembre de 2026 se completaron las cinco imágenes faltantes del
+conjunto de ejemplos. Son entradas para ensayos futuros: no se ejecutó difusión
+ni se evaluó su restauración. El par histórico de `potw1803a` quedó intacto.
+
+## Conjunto completo
+
+Cada carpeta contiene `referencia_preparada.png`, `entrada_ruidosa.png`,
+`experimento.json` y `reproduccion.json`. Para cargar ruido en la app, elegí
+**`entrada_ruidosa.png`**; la referencia se conserva para la comparación posterior.
+
+- [heic0503a](heic0503a_sigma0.03_seed123_size256/entrada_ruidosa.png): 248 × 248.
+- [heic1520a](heic1520a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 168.
+- [heic1702a](heic1702a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 256.
+- [potw1408a](potw1408a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 120.
+- [potw1428a](potw1428a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 248.
+- [potw1803a](potw1803a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 192; par histórico.
+
+Se aplicó a todas sigma 0,03, media teórica 0 y semilla 123 con PCG64, después
+del redimensionamiento LANCZOS a lado máximo 256 y lados múltiplos de ocho.
+No se recortó ni amplió la imagen. La misma semilla hace reproducible cada
+degradación; imágenes de distinto tamaño reciben arreglos de ruido distintos.
+Se verificaron los píxeles reproducidos de los seis pares y sus hashes.
+
+**Conversión de heic1702a:** el TIFF local es RGB de 16 bits por canal. Se
+decodificó con Pillow a RGB de 8 bits y se guardó una copia PNG temporal antes
+de preparar la referencia. Esta conversión pierde precisión tonal; no incorpora
+calibración científica ni ajuste de contraste. El original no se modificó.
+La conversión, el hash de esa copia, la versión de Pillow y el hash del TIFF
+quedan en sus registros. Los otros cinco TIFF locales son RGB de 8 bits.
+
+Fuente, autoría, licencia CC BY 4.0 y modificaciones de cada nueva derivada se
+conservan en `procedencia` de su `reproduccion.json`, a partir del
+[registro de ejemplos](../ejemplos/README.md). Al compartirlas, conservar esos
+créditos e indicar la reducción y el ruido artificial añadido.
+
 ## Catálogo
 
 | Archivo | Función | Fuente | Dimensiones y modo | Ruido añadido | Registro |

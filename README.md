@@ -368,6 +368,8 @@ Se conserva el par de referencia y ruido para comparar variantes de difusión so
 
 Las imágenes del ensayo se guardan en **`assets/ruido_gaussiano/`**, fuera de `outputs/`. Esta carpeta no está ignorada por Git y permite conservar los PNG con el proyecto cuando se publiquen los cambios. Las cuatro intensidades del primer barrido comparten una única copia ruidosa, por lo que no se duplican los mismos datos.
 
+El conjunto ya incluye los seis ejemplos con sigma 0,03, semilla 123 y lado máximo 256: [catálogo y conversiones](assets/ruido_gaussiano/README.md). Cada carpeta conserva referencia, entrada ruidosa y registros verificables. Las cinco nuevas entradas están preparadas para probar; todavía no tienen una restauración evaluada. Para subirlas a la app se utiliza `entrada_ruidosa.png`. El TIFF de `heic1702a` necesitó una copia RGB de 8 bits previa, con pérdida de precisión tonal documentada y sin modificar el original.
+
 | Imagen conservada | Referencia y preparación | Dimensiones | Media y sigma añadidas | Semilla y generador | Metadata de reproducción |
 | --- | --- | --- | --- | --- | --- |
 | [Referencia preparada](assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256/referencia_preparada.png) | `potw1803a.tif`, RGB de 8 bits, LANCZOS; lado máximo 256, lados múltiplos de 8, sin recorte ni ampliación | 256 × 192 | Sin ruido artificial añadido | No corresponde | [Experimento](assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256/experimento.json) |

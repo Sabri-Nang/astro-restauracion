@@ -184,6 +184,18 @@ registro de la ejecución; no los valida automáticamente. Comprobar esa informa
 antes de compartir imágenes o ZIP. Los archivos de ensayo quedan en `outputs/`,
 excluidos de Git.
 
+## Copias con ruido gaussiano
+
+Los seis originales tienen ahora una referencia preparada y una copia con
+ruido en [assets/ruido_gaussiano](../ruido_gaussiano/README.md). Las cinco copias
+faltantes se generaron el 15 de noviembre de 2026 con sigma 0,03, semilla 123,
+reducción LANCZOS a lado máximo 256 y dimensiones múltiplos de ocho. El par
+existente de `potw1803a` se conservó sin cambios. Los TIFF originales permanecen
+intactos. `heic1702a` requiere además conversión explícita de RGB de 16 bits a
+8 bits, documentada en sus registros; las otras fuentes locales son de 8 bits.
+Estas nuevas derivadas no fueron procesadas con difusión. Los registros de cada
+carpeta conservan fuente, crédito completo, licencia y modificaciones realizadas.
+
 ## Ejemplo versionado del cierre de etapa 3
 
 [SD + Tile y CLIP sobre potw1803a](etapa3_tile/README.md): comparación real, atribución, licencia, parámetros, informe y hashes. Acierto técnico del recorrido y fallo de restauración documentados sin afirmar reducción de ruido validada.
