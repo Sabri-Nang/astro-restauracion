@@ -32,20 +32,20 @@ def main():
         for name, data in payload.items():
             zipped.writestr(name, data)
         zipped.writestr("paquete_sha256.json", json.dumps(manifest, ensure_ascii=False, indent=2))
-    cells = [cell("markdown", "inicio", """# AstroRestore AI · aplicación integrada
+    cells = [cell("markdown", "inicio", """# AstroRestore AI · ejecutar en Google Colab
 
-Etapa 4: prueba de uso y preparación de la demo. SD 1.5 + ControlNet Tile → comparación → CLIP → informe y descarga. No se entrena ni se amplían imágenes. Los ensayos actuales no demostraron mejorar la entrada ruidosa.
+SD 1.5 + ControlNet Tile → comparación → CLIP → informe y descarga. No se entrena ni se amplían imágenes. Los ensayos actuales no demostraron mejorar la entrada ruidosa.
 
 Seleccioná **GPU T4** en el entorno de ejecución e interrumpí otros servidores para liberar memoria. El primer procesamiento descarga varios GB. El filtro de seguridad permanece activo. CLIP usa CPU.
 
-Este notebook permite probar commits locales antes de publicarlos. Desde el proyecto ejecutar `uv run --locked python colab/preparar_app.py` y subir **outputs/astrorestore_app_colab.zip** cuando se solicite. Solo incluye código y activos públicos, sin tokens ni pesos. Como alternativa, después de publicar los cambios, seleccionar `ORIGEN = 'github'`.
+La opción inicial clona el proyecto publicado en GitHub. Ejecutar las celdas en orden desde el navegador de Colab. Para probar cambios locales antes de publicarlos, ejecutar en el proyecto `uv run --locked python colab/preparar_app.py`, cambiar a `ORIGEN = 'paquete_local'` y subir **outputs/astrorestore_app_colab.zip** cuando se solicite. Solo incluye código y activos públicos, sin tokens ni pesos. La subida de ZIP usa el navegador de Colab, no VS Code.
 """), cell("code", "preparar", """from pathlib import Path
 from datetime import datetime, timezone
 from zipfile import ZipFile
 import hashlib, json, subprocess, sys
 from google.colab import files
 
-ORIGEN = 'paquete_local'  # 'github' requiere que los commits ya estén publicados
+ORIGEN = 'github'  # 'paquete_local' permite subir el ZIP generado desde el proyecto
 proyecto = Path('/content') / ('astrorestore_app_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
 if ORIGEN == 'github':
     subprocess.run(['git', 'clone', '--depth', '1', 'https://github.com/Sabri-Nang/astro-restauracion.git', str(proyecto)], check=True)
@@ -98,7 +98,7 @@ Si CLIP falla después de difusión, descargar las imágenes y reintentar solo e
 Imagen de ejemplo: https://esahubble.org/images/potw1803a/ — **NASA, ESA, and J. Comerford (University of Colorado-Boulder)** — CC BY 4.0, https://creativecommons.org/licenses/by/4.0/ conforme a https://esahubble.org/copyright/. Derivadas RGB reducidas, con ruido sintético y reconstrucción IA; sin autenticidad científica garantizada.
 """)]
     notebook = dict(cells=cells, metadata=dict(kernelspec=dict(display_name="Python 3", language="python", name="python3")), nbformat=4, nbformat_minor=5)
-    path = ROOT / "colab/app_integrada.ipynb"
+    path = ROOT / "colab/ejecutar_en_colab.ipynb"
     path.write_text(json.dumps(notebook, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     for item in cells:
         if item["cell_type"] == "code":
