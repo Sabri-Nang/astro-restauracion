@@ -87,10 +87,10 @@ ejecutar(['uv', 'run', '--locked', 'python', '-c', "import torch; print('CUDA:',
 ejecutar(['uv', 'run', '--locked', 'python', '-u', '-c', "from app import launch_app; launch_app(share=True, server_name='0.0.0.0')"])
 """), cell("markdown", "revisar", """## Recorrido para verificar
 
-1. Abrir **Ver ensayo guardado**: debe indicar que no se ejecutaron modelos. Sirve para revisar la interfaz y estudiar un resultado real anterior.
-2. Elegir el ejemplo gaussiano o subir un PNG/TIFF de 8 bits. Cambiar la entrada debe limpiar resultados anteriores.
-3. Mantener intensidad 0,10, 30 pasos, semilla 42 y lado máximo 256. Pulsar **Procesar y comparar** para una ejecución nueva. Registrar cualquier bloqueo sin desactivar el filtro.
-4. Revisar imágenes, deslizador, mapa y reporte CLIP; no interpretarlo como porcentaje de limpieza. Descargar el ZIP y comprobar imágenes, informe, parámetros y hashes.
+1. Subir una foto astronómica PNG o TIFF compatible. Los archivos de 16 bits requieren una copia RGB de 8 bits exportada desde el editor, conservando el original.
+2. Cambiar la entrada debe limpiar resultados anteriores. La vista principal no ofrece ejemplos ni registros técnicos.
+3. Mantener el control de cambio en su valor inicial 0,10 y pulsar **Procesar y comparar** para una ejecución nueva. Los otros parámetros son fijos y se conservan en el ZIP. Registrar cualquier bloqueo sin desactivar el filtro.
+4. Revisar el deslizador, las zonas amarillas y el informe. Las marcas indican cambios, no invenciones detectadas. Descargar el ZIP y comprobar original, salida sin marcas, copia resaltada, copia con aviso visible de IA, informe, parámetros y hashes.
 5. Capturar la advertencia, comparación e informe, conservando el crédito. Anotar revisión de código, GPU, duración y errores para la demo. Revisar también móvil y teclado.
 
 Si CLIP falla después de difusión, descargar las imágenes y reintentar solo el análisis. La instalación y sintaxis del notebook se comprueban localmente; la ejecución completa de esta versión en Colab debe registrarse, no se da por realizada.

@@ -86,19 +86,19 @@ Las pruebas CPU y T4 registradas se detallan en **Evidencias técnicas y evaluac
 
 ## Qué es real y qué es inventado
 
-Stable Diffusion transforma una representación comprimida de la imagen y puede generar detalles plausibles, alterar colores o borrar estructuras. La salida no permite afirmar que recuperó información astronómica perdida. El ruido agregado internamente por img2img es parte de la generación; eliminarlo no acredita eliminar correctamente el ruido del sensor.
+**Restaurar no es recuperar.** Conservamos el archivo cargado sin modificar. Para comparar, preparamos una copia RGB reducida. La difusión reconstruye píxeles usando esa copia y patrones aprendidos: puede alterar colores, borrar estrellas tenues o generar texturas plausibles. No recupera información perdida con garantía ni separa dato e invención píxel a píxel.
 
-En la app, **entrada preparada** significa la foto cargada convertida a RGB y ajustada de tamaño; conserva el ruido que traía. Actualmente no se le agrega ruido artificial para evaluarla. **Salida generativa** es el resultado después de aplicar difusión. La etapa interna con ruido no se muestra.
+**Cómo lo ve Julia.** El deslizador compara entrada y reconstrucción. **Zonas para revisar** superpone amarillo en cambios locales; puede desactivarse sin otra inferencia. También puede marcar ruido modificado o detalles perdidos: no detecta invenciones. Las zonas sin marca tampoco están certificadas como fieles. El informe orientativo explica las asociaciones de CLIP; sus cifras quedan en la descarga y no son porcentajes de limpieza.
 
-La comparación utiliza entrada preparada y salida del mismo tamaño. El deslizador permite examinar regiones y el mapa muestra dónde cambiaron los píxeles; no clasifica cambios como correctos, reales o inventados. La interfaz advierte:
+![Zonas para revisar sobre una salida real preservada](assets/ejemplos/etapa3_tile/zonas_para_revisar.png)
 
-> Imagen reconstruida por IA. El modelo puede borrar o inventar estructuras. Esta prueba no demuestra reducción de ruido ni autenticidad científica. La intensidad controla la transformación generativa, no el ruido eliminado.
+*Derivada del ensayo guardado, sin nueva inferencia; no es una captura de interfaz. Crédito: NASA, ESA, and J. Comerford (University of Colorado-Boulder), [ESA/Hubble potw1803a](https://esahubble.org/images/potw1803a/), CC BY 4.0. Captura real de la nueva interfaz: pendiente.*
 
-**Fallo observado:** en la prueba de `heic1520a.tif` de etapa 2 se registraron engrosamiento de filamentos y trazos curvos distintos de la entrada preparada. Se usaron intensidad 0,5 y dos pasos efectivos de DDIM. Esto muestra una alteración visual; no prueba que cada trazo sea una estructura astronómica nueva. Fuente: [registro local](outputs/etapa2/heic1520a/parametros.json) y [procedencia y créditos](assets/ejemplos/README.md).
+**Aviso y archivo compartido.** «Tu original se conserva. Esta imagen fue reconstruida por IA y puede contener detalles generados o haber perdido otros. Revisá los cambios antes de compartirla». La interfaz aclara que la limpieza no está demostrada. El ZIP conserva original, salida sin marcas, resaltado, informe y registro; una copia para compartir lleva la banda **Reconstruida con IA** y no se usa para métricas.
 
-**Verificación:** conservar el archivo original, comparar regiones equivalentes y consultar observaciones independientes cuando existan. El experimento gaussiano conserva una referencia conocida para esa degradación; sus tres salidas válidas se evaluaron con PSNR, SSIM y recortes comunes. Ni esa comparación ni CLIP o las métricas garantizan autenticidad científica.
+**Fallo concreto.** En `heic1520a.tif`, etapa 2, intensidad 0,5, se observaron filamentos engrosados y trazos distintos de la entrada. En el [ensayo Tile versionado](assets/ejemplos/etapa3_tile/README.md), PSNR y SSIM empeoran frente a conservar la entrada ruidosa. No se presentan como estructuras astronómicas verificadas.
 
-**Evidencia visual pendiente:** incorporar una captura de la interfaz con la advertencia y el caso de fallo, conservando los créditos de la imagen.
+**Verificación y riesgo.** Real se refiere a la escena; ficticio, a lo generado; creíble, a su apariencia; verificable exige evidencia independiente. Para confirmar estructuras hacen falta otras observaciones. Julia puede mostrar original y reconstrucción en clases, indicando la intervención. No usar la salida como descubrimiento, medición, archivo histórico fiel o prueba periodística. Rostros, textos, matrículas y documentos quedan fuera del alcance: los detalles generados no son identificaciones ni transcripciones verificadas. Publicarlos sin aclaración puede inducir conclusiones falsas. Ni CLIP ni las métricas prueban autenticidad.
 
 ## Características
 
@@ -352,11 +352,11 @@ Si Git informa conflictos o cambios locales, revisar el mensaje antes de continu
 
 1. Ejecutar `uv run app.py` o, en Colab, iniciar la celda de Gradio.
 2. Abrir la dirección indicada en la salida. Localmente suele ser `http://127.0.0.1:7860`; si está ocupada puede cambiar. En Colab usar el enlace público temporal `https://…gradio.live`.
-3. Subir un PNG o TIFF de 8 bits por canal. Se puede elegir el ejemplo gaussiano integrado; los originales adicionales se descargan según su [registro](assets/ejemplos/README.md).
-4. Ajustar intensidad de transformación, pasos, semilla y tamaño máximo. La intensidad no es un porcentaje de ruido eliminado. El valor 0,5 de las pruebas de etapa 2 no es una recomendación de restauración.
+3. Subir una foto astronómica PNG o TIFF. La ayuda de compatibilidad explica la profundidad de color; los archivos de más de 8 bits requieren una copia RGB exportada explícitamente, sin reemplazar el original. No se ofrecen ejemplos en la vista principal.
+4. Ajustar «Cuánto puede cambiar la IA tu foto». La intensidad no es un porcentaje de ruido eliminado. Los otros parámetros se mantienen en los valores reproducibles del ensayo y se guardan en el ZIP; el laboratorio técnico conserva sus controles aparte.
 5. Pulsar **Procesar y comparar**. Se ejecutan SD + Tile y luego CLIP. La primera ejecución descarga los pesos y puede demorar; se recomienda probar en Colab con GPU. CLIP usa CPU para reservar memoria de GPU.
-6. Examinar entrada preparada y salida, mover el deslizador y revisar el mapa y los parámetros. No interpretar una mejora estética como conservación científica.
-7. Leer el informe orientativo y descargar el ZIP con original, entrada preparada, salida, mapa, informe y parámetros. Si CLIP falla, reintentar solo el análisis visual sin ejecutar nuevamente difusión.
+6. Mover el deslizador y alternar las zonas amarillas para revisar los mismos detalles. El amarillo indica cambios locales de píxeles, no invenciones detectadas. No interpretar una mejora estética como conservación científica.
+7. Leer el informe orientativo y descargar el ZIP: original, entrada ajustada, salida sin marcas, zonas resaltadas, copia con aviso visible de IA, mapa absoluto, informe y registro. Los parámetros y números CLIP se consultan en esa descarga, no en la vista principal. «Reintentar informe y descarga» no repite difusión.
 
 Las capturas del recorrido se incorporarán al completar la revisión visual de la interfaz.
 
@@ -892,7 +892,7 @@ Artefactos locales: [resumen de resultados](outputs/etapa2/resumen.json) y [comp
 
 ### Etapa 4: interfaz y preparación de demo
 
-Se retomó la revisión centrada en Julia y una [base de diseño compartida](docs/diseno_interfaz.md). Para iniciar localmente: `uv run --locked python app.py`. El botón **Ver ensayo guardado** abre evidencia real sin ejecutar modelos; **Procesar y comparar** inicia una inferencia nueva.
+Se retomó la revisión centrada en Julia y una [base de diseño compartida](docs/diseno_interfaz.md). Para iniciar localmente: `uv run --locked python app.py`. **Procesar y comparar** inicia la inferencia sobre la foto propia. Por pedido de la autora, se retiraron los ejemplos y el acceso a ensayos guardados de la vista principal; la evidencia histórica permanece en el repositorio.
 
 Para probar los commits locales en Colab: `uv run --locked python colab/preparar_app.py`, subir [app_integrada.ipynb](colab/app_integrada.ipynb) a Colab y cargar el ZIP generado en `outputs/astrorestore_app_colab.zip`. El notebook también admite GitHub después de publicar. [Guía de comprobación, capturas y guion de cinco minutos](docs/entrega_etapa4.md). La ejecución completa en Colab, revisión visual, video, reflexión y licencia del código permanecen pendientes.
 

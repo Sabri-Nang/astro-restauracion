@@ -6,7 +6,7 @@ La etapa 3 quedó implementada y documentada. Se retoma la revisión centrada en
 
 1. Ejecutar `uv run --locked python colab/preparar_app.py` desde la raíz. Genera `outputs/astrorestore_app_colab.zip`, sin pesos, entornos ni credenciales.
 2. Subir `colab/app_integrada.ipynb` a Colab, elegir GPU T4 y ejecutar las celdas. El origen inicial es el paquete local, para no depender de un push. Tras publicar se puede seleccionar GitHub.
-3. Registrar commit, GPU, parámetros, duración y si ocurrió algún error. Probar primero la vista del ensayo guardado, luego una ejecución nueva con el ejemplo gaussiano.
+3. Registrar commit, GPU, parámetros, duración y si ocurrió algún error. Subir una foto propia compatible y ejecutar el recorrido real. Los ensayos históricos se consultan en la documentación, sin botones de ejemplo en la interfaz.
 4. Descargar el ZIP y conservarlo fuera de Colab. No confundir abrir un resultado previo con ejecutar otra inferencia.
 
 El notebook está generado y sus celdas Python compiladas localmente; su ejecución en Colab todavía requiere una sesión real. Los notebooks anteriores se conservan como evidencia histórica de experimentos.
@@ -14,9 +14,9 @@ El notebook está generado y sus celdas Python compiladas localmente; su ejecuci
 ## Guion propuesto del video de cinco minutos
 
 - 0:00–0:40: problema de Julia, objetivo limitado a ruido y advertencia de reconstrucción.
-- 0:40–1:20: cargar el ejemplo, mostrar fuente y licencia, explicar intensidad 0,10, 30 pasos y semilla. No prometer limpieza.
+- 0:40–1:20: subir una imagen con permiso de uso, mostrar su crédito y explicar el control de cuánto puede cambiar la IA la foto. No prometer limpieza.
 - 1:20–2:20: iniciar procesamiento real. Si se recorta la espera en edición, indicarlo; no presentar el ensayo guardado como nueva inferencia.
-- 2:20–3:20: comparar las mismas regiones y abrir el mapa; explicar que indica cambios, sin identificar cuáles son correctos.
+- 2:20–3:20: comparar las mismas regiones y alternar el resaltado amarillo; explicar que indica cambios, sin identificar cuáles son correctos o inventados.
 - 3:20–4:10: leer CLIP y sus límites, mostrar parámetros y descargar el ZIP.
 - 4:10–5:00: explicar el resultado desfavorable del ensayo y qué se investigaría después. La reflexión debe ser la de la autora.
 
