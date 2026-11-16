@@ -39,12 +39,19 @@ def prepare_image(path: str | Path, max_size: int = 256) -> Image.Image:
         if source.format not in ("PNG", "TIFF"):
             raise ValueError("Seleccioná una imagen PNG o TIFF.")
         bits = getattr(source, "tag_v2", {}).get(258, (8,))
+        if source.format == "PNG":
+            # Pillow puede decodificar PNG RGB de 16 bits como RGB de 8 bits.
+            # Consultar IHDR permite rechazar esa conversión silenciosa.
+            with Path(path).open("rb") as png:
+                header = png.read(25)
+            bits = (header[24],)
         if isinstance(bits, int):
             bits = (bits,)
         if any(bit > 8 for bit in bits) or source.mode in ("I", "F") or source.mode.startswith("I;16"):
             raise ValueError(
-                "La prueba admite imágenes de 8 bits por canal. Prepará una "
-                "copia RGB de 8 bits y documentá la conversión; conservá el original."
+                "Tu archivo guarda más niveles de color de los que admite esta versión. "
+                "Desde tu editor, exportá una copia PNG o TIFF RGB de 8 bits por canal. "
+                "Conservá el original. Esto no se refiere a sus dimensiones ni a su peso."
             )
         if source.width < 64 or source.height < 64:
             raise ValueError("La imagen debe medir al menos 64 píxeles por lado.")
