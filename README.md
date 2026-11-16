@@ -8,7 +8,7 @@ El ruido dificulta apreciar estrellas tenues y estructuras difusas en fotografí
 
 La aplicación está pensada para Julia, profesora de Física y aficionada a la astrofotografía. Integra Stable Diffusion 1.5 con ControlNet Tile para transformar imágenes, CLIP para ofrecer un análisis descriptivo y una interfaz Gradio para comparar, revisar zonas modificadas y descargar el resultado con un aviso de reconstrucción.
 
-El MVP se limita a **reducción de ruido**, dentro de la sub-tarea B del trabajo. Es un prototipo funcional, pero **ninguna configuración evaluada demostró mayor fidelidad que conservar la entrada ruidosa**. Las etapas 1 y 2 están completadas, la etapa 3 implementada y documentada y la etapa 4 en curso. Capturas, video y revisión de la interfaz actual en Colab siguen pendientes. [Plan por etapas](docs/plan_de_trabajo.md).
+El MVP se limita a **reducción de ruido**, dentro de la sub-tarea B del trabajo. Es un prototipo funcional, pero **ninguna configuración evaluada demostró mayor fidelidad que conservar la entrada ruidosa**. El pipeline está implementado; capturas, video y revisión de la interfaz actual en Colab siguen pendientes.
 
 ## Persona Usuaria
 
@@ -20,13 +20,11 @@ El MVP se limita a **reducción de ruido**, dentro de la sub-tarea B del trabajo
 
 **Solución:** cargar una foto, controlar cuánto puede cambiar la IA, comparar las mismas regiones y consultar advertencias antes de compartirla. La mejora de reducción de ruido todavía debe demostrarse.
 
-[Perfil completo, objetivos y alcance](docs/fundamentos_y_persona.md).
-
 ## Demo
 
 **Pendiente:** capturas o GIF de la interfaz actual y enlace al video de cinco minutos. No se presentan imágenes de resultados como capturas de la aplicación.
 
-Como evidencia disponible, el [ensayo real con Tile y CLIP](assets/ejemplos/etapa3_tile/README.md) conserva entrada, salida, comparación, análisis y atribución. La autora confirmó el funcionamiento de una versión anterior de Gradio desde el enlace público de Colab; falta registrar el recorrido completo de la interfaz actual. [Guion y comprobaciones para la demo](docs/entrega_etapa4.md).
+Como evidencia disponible, el [ensayo real con Tile y CLIP](assets/ejemplos/etapa3_tile/README.md) conserva entrada, salida, comparación, análisis y atribución. La autora confirmó el funcionamiento de una versión anterior de Gradio desde el enlace público de Colab; falta registrar el recorrido completo de la interfaz actual. El video deberá mostrar el problema, la carga, el procesamiento real, la comparación y una reflexión sobre los detalles reconstruidos; si se recorta la espera en edición, debe indicarse.
 
 ## Qué es real y qué es inventado
 
@@ -69,7 +67,7 @@ Como evidencia disponible, el [ensayo real con Tile y CLIP](assets/ejemplos/etap
 
 **Procesamiento:** PyTorch **2.15.0**, Diffusers **0.42.1**, Transformers **5.22.2**, Accelerate **1.15.0**, Pillow **12.3.0**, NumPy **2.5.4** y scikit-image **0.26.0**, según `uv.lock`. No se incluye OpenCV ni LPIPS.
 
-**Hardware con el que se probó:** Windows 11, 16 GB de RAM y AMD Radeon RX 580 2048SP de 8 GB; las pruebas locales de difusión utilizaron **CPU**, sin aceleración validada en esa GPU. Se registró por separado una prueba en **Tesla T4 de Colab** con CUDA y `float16`; la RAM de esa sesión no quedó documentada. El ensayo Tile registra CUDA, pero no identifica la GPU concreta. [Entorno y mediciones detalladas](docs/arquitectura_tecnica.md).
+**Hardware con el que se probó:** Windows 11, 16 GB de RAM y AMD Radeon RX 580 2048SP de 8 GB; las pruebas locales de difusión utilizaron **CPU**, sin aceleración validada en esa GPU. Se registró por separado una prueba en **Tesla T4 de Colab** con CUDA y `float16`; la RAM de esa sesión no quedó documentada. El ensayo Tile registra CUDA, pero no identifica la GPU concreta.
 
 ## Arquitectura del Sistema
 
@@ -88,7 +86,43 @@ flowchart LR
 
 `app.py` organiza la interfaz; `src/diffusion.py` prepara la imagen y ejecuta difusión; `src/analysis.py` compara afinidades CLIP; `src/honesty.py` calcula diferencias y advertencias; `src/export.py` conserva imágenes y registros. Los modelos se cargan al procesar, sin descargarlos al importar módulos.
 
-La generación de ruido y las métricas permanecen en un recorrido experimental separado: **referencia preparada → ruido artificial → difusión → comparación contra la referencia**. [Estructura completa y responsabilidades](docs/arquitectura_tecnica.md).
+La generación de ruido y las métricas permanecen en un recorrido experimental separado: **referencia preparada → ruido artificial → difusión → comparación contra la referencia**.
+
+
+### Estructura del proyecto
+
+```text
+astro-restauracion/
+├── app.py
+├── pyproject.toml
+├── uv.lock
+├── .python-version
+├── README.md
+├── AGENTS.md
+├── .gitignore
+├── src/
+│   ├── diffusion.py
+│   ├── analysis.py
+│   ├── honesty.py
+│   ├── export.py
+│   └── ...                 # Ruido, experimentos, métricas y validación
+├── assets/
+│   ├── ejemplos/           # Fuentes, originales locales y evidencia pública
+│   ├── ruido_gaussiano/    # Seis pares con registros reproducibles
+│   └── interfaz/tema.css
+├── colab/
+│   ├── ejecutar_en_colab.ipynb
+│   └── preparar_app.py     # ZIP opcional para probar cambios locales
+├── tests/                 # Comprobaciones sin descargar modelos
+└── laboratorio.py         # Herramienta experimental independiente
+```
+
+La documentación de uso está en este README. Los README de `assets/` conservan
+únicamente procedencia, atribuciones, preparación de datos y evidencia. El
+historial de desarrollo queda en Git. `src/export.py`, los módulos experimentales,
+el laboratorio y las pruebas siguen siendo utilizados y se conservan. Los
+directorios locales `outputs/`, `logs/`, `.cache/` y `.venv/` están ignorados;
+todos los registros `.log` se guardan en `logs/`.
 
 ## Instalación y Ejecución
 
@@ -111,16 +145,16 @@ uv run app.py
 
 Abrir la dirección que muestra Gradio, habitualmente `http://127.0.0.1:7860`. Para exigir el bloqueo al ejecutar: `uv run --locked python app.py`. Detener con `Ctrl+C`. La primera inferencia tarda más por la descarga y carga de pesos; las siguientes reutilizan la caché.
 
-Se comprobó una instalación local en copia nueva para una revisión anterior y el recorrido HTTP de la interfaz actual con modelos simulados. Eso no equivale a otra inferencia ni a una revisión visual completa. [Verificación y límites](docs/verificacion_etapa4.md).
+Se comprobó una instalación local en copia nueva para una revisión anterior y el recorrido HTTP de la interfaz actual con modelos simulados. Eso no equivale a otra inferencia ni a una revisión visual completa. La última revisión registró 62 pruebas automatizadas correctas y comprobación HTTP con imágenes guardadas y modelos simulados. La instalación nueva correspondió al commit `13183a8`, con dependencias en caché; no valida automáticamente la revisión actual.
 
 ### Alternativa: Google Colab
 
-1. Abrir el [notebook integrado en Colab](https://colab.research.google.com/github/Sabri-Nang/astro-restauracion/blob/main/colab/app_integrada.ipynb), desde el navegador, y seleccionar GPU T4 si está disponible.
-2. Para usar el código publicado, cambiar la primera celda a `ORIGEN = 'github'`. Ejecutar las celdas en orden: clonado, instalación con uv y Python 3.12, comprobación de CUDA y lanzamiento de Gradio.
+1. Abrir el [notebook integrado en Colab](https://colab.research.google.com/github/Sabri-Nang/astro-restauracion/blob/main/colab/ejecutar_en_colab.ipynb), desde el navegador, y seleccionar GPU T4 si está disponible.
+2. Mantener `ORIGEN = 'github'` para usar el código publicado. Ejecutar las celdas en orden: clonado, instalación con uv y Python 3.12, comprobación de CUDA y lanzamiento de Gradio.
 3. Abrir el enlace público temporal `https://…gradio.live`. El enlace local apunta a la máquina de Colab. La celda queda ejecutándose mientras el servidor está activo.
 4. Subir una imagen compatible y descargar los resultados antes de cerrar la sesión. Los TIFF locales no se transfieren automáticamente; se pueden subir los PNG del [catálogo gaussiano](assets/ruido_gaussiano/README.md).
 
-Para probar cambios sin publicarlos, ejecutar localmente `uv run --locked python colab/preparar_app.py`, subir la copia local de [app_integrada.ipynb](colab/app_integrada.ipynb) y mantener `ORIGEN = 'paquete_local'`; cargar el ZIP generado `outputs/astrorestore_app_colab.zip`. Esta ruta está pensada para el navegador de Colab. [Guía detallada e historial de la alternativa para VS Code](docs/instalacion_detallada.md).
+Para probar cambios sin publicarlos, ejecutar localmente `uv run --locked python colab/preparar_app.py`, subir la copia local de [ejecutar_en_colab.ipynb](colab/ejecutar_en_colab.ipynb) y cambiar a `ORIGEN = 'paquete_local'`; cargar el ZIP generado `outputs/astrorestore_app_colab.zip`. Esta ruta está pensada para el navegador de Colab. Si se actualiza el código, interrumpir el servidor y ejecutar el notebook en una nueva sesión; con cambios locales, regenerar el ZIP. Descargar los resultados antes de cerrar Colab.
 
 ## Uso
 
@@ -145,7 +179,7 @@ Se adoptó SD 1.5 como prueba img2img por su integración con Diffusers y la pos
 
 ### Por qué CLIP como análisis descriptivo
 
-Compara las imágenes con frases fijas sin entrenar un modelo adicional. La revisión, el preprocesamiento y las frases están fijados; el informe explica sus límites. No se utiliza para identificar estructuras reales ni medir limpieza. [Método y validación](docs/analisis_visual.md).
+Compara las imágenes con frases fijas sin entrenar un modelo adicional. La revisión, el preprocesamiento y las frases están fijados; el informe explica sus límites. No se utiliza para identificar estructuras reales ni medir limpieza. Se comparan embeddings normalizados con seis frases en inglés, sin softmax. CLIP usa CPU en float32 y recorte central a 224 píxeles; el informe muestra las dos frases con mayor afinidad y conserva los valores exactos en el ZIP.
 
 ### Principios de Human-AI Interaction aplicados
 
@@ -171,8 +205,6 @@ Compara las imágenes con frases fijas sin entrenar un modelo adicional. La revi
 - **Propuestas del agente y revisión:** generación gaussiana reproducible, diferencias en escala fija, integración de modelos, pruebas automatizadas y registros. Se contrastaron las propuestas con ejecuciones y artefactos compartidos por la autora, documentando resultados desfavorables.
 - **Opciones pospuestas:** cambio a SDXL, varios modelos y filtro bilateral. No se presentan como evaluadas ni descartadas por resultados que no existen. La aceptación de cambios no reemplaza la revisión visual de la interfaz actual ni la reflexión personal de la autora.
 
-[Registro ampliado de la colaboración](docs/fundamentos_y_persona.md).
-
 ## Limitaciones Conocidas
 
 - No se demostró reducción de ruido con mejor fidelidad en el caso evaluado. Puede borrar estrellas, cambiar contornos y generar texturas.
@@ -188,7 +220,27 @@ Compara las imágenes con frases fijas sin entrenar un modelo adicional. La revi
 
 **PSNR** mide parecido entre píxeles; **SSIM**, similitud de estructura. Valores mayores indican más parecido con la referencia, no mayor autenticidad. Se calculan por consola para el ensayo sintético, comparando contra la imagen preparada **antes** de añadir ruido. No se calculan sobre una foto real sin referencia confiable. **LPIPS no está implementado.**
 
-En `potw1803a`, la entrada ruidosa obtuvo **31,2381 dB / 0,637538** (PSNR/SSIM); Tile a intensidad 0,10 obtuvo **28,4258 dB / 0,552753**. Para Julia, significa que esa reconstrucción se alejó más de la referencia que la propia entrada ruidosa. No demuestra limpieza, y no permite generalizar a todas las imágenes o modelos. [Método, barridos, recortes y comandos](docs/experimentos_y_evaluacion.md).
+En `potw1803a`, la entrada ruidosa obtuvo **31,2381 dB / 0,637538** (PSNR/SSIM); Tile a intensidad 0,10 obtuvo **28,4258 dB / 0,552753**. Para Julia, significa que esa reconstrucción se alejó más de la referencia que la propia entrada ruidosa. No demuestra limpieza, y no permite generalizar a todas las imágenes o modelos. Tile a intensidad 0,15 también empeoró ambas métricas; 0,20 y 0,25 quedaron bloqueadas. Los controles VAE mostraron cambios incluso sin ejecutar difusión. Los registros originales y el ejemplo público se conservan sin atribuirles resultados nuevos.
+
+
+La evaluación utiliza RGB publicado normalizado a [0, 1], `data_range=1`, SSIM
+gaussiano con ventana 11 × 11 y sigma 1,5, por canales y covarianza poblacional.
+Verifica hashes y dimensiones; no alinea ni ajusta el contraste. El ensayo
+gaussiano agrega media 0, sigma 0,03 y semilla 123 después de reducir la imagen.
+La referencia publicada puede contener ruido propio: solo define el objetivo
+de esta degradación artificial.
+
+Para verificar el proyecto sin descargar pesos ni ejecutar inferencias:
+
+```powershell
+uv run --locked python -m unittest discover -s tests -v
+```
+
+La validación técnica de cinco imágenes se conserva en `src/validation.py` y no
+debe confundirse con demostrar reducción de ruido. Para investigación, el
+laboratorio se abre con `uv run laboratorio.py`; los comandos de preparación,
+reproducción y evaluación están disponibles con `--help` en `src.experiment`,
+`src.noise_assets` y `src.evaluation`.
 
 ## Trabajo Futuro
 
@@ -198,8 +250,6 @@ En `potw1803a`, la entrada ruidosa obtuvo **31,2381 dB / 0,637538** (PSNR/SSIM);
 - [ ] Elegir la licencia del código y agregar su archivo.
 - [ ] Ampliar la evaluación de restauración a las seis imágenes y casos reales, manteniendo referencias y semillas comparables.
 - [ ] Después de la entrega, investigar calidad y una línea base clásica opcional antes de agregar complejidad.
-
-[Cronograma, criterios de cierre y contingencia](docs/plan_de_trabajo.md).
 
 ## Reflexiones y Aprendizajes
 
@@ -213,7 +263,7 @@ El desarrollo permitió distinguir una inferencia correcta de una reducción de 
 - [Stable Diffusion 1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5), [ControlNet Tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile) y [CLIP ViT-B/32](https://huggingface.co/openai/clip-vit-base-patch32).
 - [Diffusers img2img](https://huggingface.co/docs/diffusers/using-diffusers/img2img), [DDIM](https://huggingface.co/docs/diffusers/api/schedulers/ddim) y [licencia de CLIP](https://github.com/openai/CLIP/blob/main/LICENSE).
 - [Gradio](https://www.gradio.app/docs), [uv](https://docs.astral.sh/uv/) y [métricas de scikit-image](https://scikit-image.org/docs/stable/api/skimage.metrics.html).
-- [Documentación complementaria e índice](docs/README.md), [procedencia de imágenes](assets/ejemplos/README.md) y [catálogo gaussiano](assets/ruido_gaussiano/README.md).
+- [Procedencia de imágenes](assets/ejemplos/README.md), [catálogo gaussiano](assets/ruido_gaussiano/README.md) y [evidencia real de Tile y CLIP](assets/ejemplos/etapa3_tile/README.md).
 
 ## Autor
 
