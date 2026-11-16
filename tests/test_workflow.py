@@ -43,3 +43,31 @@ class WorkflowTests(unittest.TestCase):
                 self.assertIn('entrada_preparada.png',record['hashes_exportados_sha256'])
                 self.assertNotIn('psnr',record)
                 self.assertIn('no distingue',record['mapa_diferencias'])
+                self.assertIn('zonas_para_revisar.png', zipped.namelist())
+                self.assertIn('para_compartir_con_aviso.png', zipped.namelist())
+                self.assertEqual(record['resaltado_de_cambios']['umbral_fijo'], 12)
+                self.assertIn('no es una observación', zipped.read('LEEME.txt').decode('utf-8').lower())
+                with zipped.open('salida_ia.png') as exported:
+                    with Image.open(exported) as saved:
+                        self.assertEqual(saved.tobytes(), image.tobytes())
+                        self.assertIn('IA', saved.info['Description'])
+
+    def test_user_view_has_no_examples_or_raw_record_and_keeps_comparison(self):
+        interface = app.create_app()
+        components = interface.config['components']
+        labels = [item['props'].get('label', '') for item in components]
+        self.assertFalse(any(item['type'] == 'json' for item in components))
+        self.assertNotIn('Ver parámetros y registro completo', labels)
+        self.assertFalse(any(item['type'] == 'dataset' for item in components))
+        self.assertTrue(any(item['type'] == 'imageslider' for item in components))
+
+    def test_user_toggle_does_not_infer_and_preserves_raw_result(self):
+        before = Image.new('RGB', (64, 64), (10, 20, 30))
+        after = Image.new('RGB', (64, 64), (110, 120, 130))
+        state = (before, after, {}, 'entrada.png')
+        with patch.object(app, 'run_diffusion') as diffusion:
+            marked = app.review_image(state, True)
+            raw = app.review_image(state, False)
+        diffusion.assert_not_called()
+        self.assertEqual(raw.tobytes(), after.tobytes())
+        self.assertNotEqual(marked.tobytes(), after.tobytes())

@@ -7,6 +7,14 @@ import torch
 from src import analysis
 
 class AnalysisTests(unittest.TestCase):
+    def test_user_report_explains_preferences_without_quality_numbers(self):
+        rows = [{'descripcion': 'textura granulada', 'entrada': 0.1234, 'salida': 0.2345, 'diferencia': 0.1111}]
+        text = analysis.render_user_report({'afinidades': rows})
+        self.assertIn('mayor afinidad', text)
+        self.assertIn('observaciones independientes', text)
+        self.assertIn('no demuestran', text)
+        self.assertNotIn('0.1234', text)
+        self.assertNotIn('0.2345', text)
     def test_cosines_are_not_softmax_and_report_is_traceable(self):
         class Processor:
             image_processor = SimpleNamespace(to_dict=lambda: {"crop_size":224})

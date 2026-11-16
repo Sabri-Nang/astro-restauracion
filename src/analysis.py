@@ -68,3 +68,35 @@ def render_report(analysis: dict) -> str:
                  "Conservá el original y verificá fondo, estrellas y contornos en las mismas regiones. "
                  "No uses esta salida para mediciones científicas.")
     return "\n\n".join(lines)
+
+
+def render_user_report(analysis: dict) -> str:
+    """Presenta las afinidades como pistas descriptivas, sin números de calidad."""
+    rows = analysis["afinidades"]
+    lines = [
+        "### Una lectura orientativa para tu comparación",
+        "El modelo de visión compara la foto con un grupo de descripciones. "
+        "Sus preferencias son pistas generales, no comprobaciones de lo que hay en el cielo.",
+    ]
+    if rows:
+        for key, title in (("entrada", "Foto de entrada"), ("salida", "Reconstrucción")):
+            descriptions = sorted(rows, key=lambda row: row[key], reverse=True)[:2]
+            phrases = ", ".join(f"«{row['descripcion']}»" for row in descriptions)
+            lines.append(f"**{title}:** las frases con mayor afinidad son {phrases}.")
+        lines.append(
+            "El orden puede variar por diferencias pequeñas. Estas frases no demuestran que "
+            "se haya quitado ruido ni que una textura sea artificial; los valores completos "
+            "quedan en el registro descargable."
+        )
+    else:
+        lines.append("No se registraron afinidades para esta comparación.")
+    lines.extend([
+        "**Qué podés comprobar aquí:** dónde cambió la apariencia de la entrada, usando "
+        "el deslizador y las zonas resaltadas. Revisá fondo, puntos luminosos y contornos.",
+        "**Qué no podemos confirmar:** qué detalles nuevos corresponden a la escena real. "
+        "Un resultado creíble no se vuelve verificable sin observaciones independientes.",
+        "**Antes de compartir:** conservá el original e indicá «Reconstruida con IA». "
+        "Para tus clases, mostrala junto a la entrada y explicá la intervención. "
+        "No la uses como evidencia de una nueva estrella o estructura ni para mediciones científicas.",
+    ])
+    return "\n\n".join(lines)

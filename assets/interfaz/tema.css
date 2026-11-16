@@ -16,6 +16,11 @@
   padding: var(--astro-espacio);
   background: var(--block-background-fill);
 }
+#leyenda-cambios {
+  border-left: 4px solid #b77900;
+  padding: 8px 16px;
+  line-height: 1.55;
+}
 .gradio-container button:focus-visible, .gradio-container a:focus-visible {
   outline: 3px solid var(--astro-acento);
   outline-offset: 3px;

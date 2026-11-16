@@ -1,26 +1,22 @@
-# Base de diseño para Julia — etapa 4
+# Interfaz para Julia — revisión de etapa 4
 
-La revisión se retoma por pedido de la autora al finalizar la etapa 3. Esta primera versión organiza el uso; todavía requiere revisión visual y prueba con una persona.
+## Recorrido principal
 
-## Recorrido y jerarquía
+1. Subir la foto propia. El formato se presenta como PNG o TIFF; la profundidad de color se explica en una ayuda, sin confundirla con dimensiones o peso. Los originales de 16 bits requieren exportar una copia compatible; no se convierten silenciosamente.
+2. Elegir cuánto puede cambiar la IA la foto. Se conserva el control de intensidad; los pasos, semilla y tamaño de trabajo usan 30, 42 y 256 para mantener un recorrido simple y reproducible. El laboratorio técnico conserva su propósito separado.
+3. Comparar foto ajustada y reconstrucción mediante el deslizador. Una vista contigua muestra las zonas para revisar en amarillo; el control de resaltado permite volver a la salida sin marcas, sin inferencia adicional.
+4. Leer el informe y guardar el resultado. Las afinidades CLIP se presentan como preferencias por frases, sin números de calidad ni probabilidad de autenticidad. Los valores exactos y parámetros quedan en el ZIP.
 
-1. Preparar: subir un archivo o elegir el ejemplo público. Los ajustes avanzados se agrupan en un acordeón para no competir con la acción principal.
-2. Comparar: entrada preparada, reconstrucción identificada como IA y deslizador de las mismas regiones. El mapa se abre cuando se necesita.
-3. Entender y guardar: informe, límites, reintento independiente y ZIP. El registro técnico se consulta opcionalmente.
+Se retiraron los ejemplos, el botón de ensayo guardado y el acordeón de registro completo de la interfaz de usuario final. La evidencia y las funciones de investigación permanecen disponibles en el repositorio. Cambiar la foto limpia los resultados para evitar asociarlos a otra entrada. El reintento del informe no vuelve a ejecutar difusión.
 
-«Ver ensayo guardado» permite explorar resultados reales sin esperar una inferencia; la vista lo identifica explícitamente. «Procesar y comparar» ejecuta los modelos. Cambiar el archivo limpia los resultados anteriores para evitar asociarlos a la entrada equivocada.
+## Honestidad y resaltado
 
-## Convenciones compartidas
+El amarillo significa cambio de píxeles que merece revisión, no invención detectada. Se calcula la media RGB absoluta redondeada y se promedia en un entorno local de 5 × 5 píxeles para agrupar cambios cercanos, con umbral fijo de 12 sobre 255, color (255, 176, 0) y opacidad 0,6 sobre la salida. No se normaliza por imagen ni se usa CLIP para localizar supuestas invenciones. El aviso aclara que también puede marcar ruido modificado o detalles perdidos y que las zonas sin marca no están verificadas.
 
-- Tipografía del sistema Arial/sans-serif, sin descargar fuentes externas; título adaptable entre 2 y 3 rem y texto con interlineado 1,55.
-- Tema Soft de Gradio, acento teal y neutros slate; color de acento local `#0f766e`.
-- Espaciado base 16 px, radio 12 px, contenedor máximo 1120 px; margen interior 24 px y 12 px en pantallas de hasta 640 px.
-- Acción primaria para inferencia; secundaria para evidencia guardada. Se conserva el foco de teclado y se refuerza su contorno.
-- Advertencia persistente junto al encabezado; ningún color sustituye etiquetas o mensajes textuales.
-- No usar «limpieza exitosa», estrellas de calidad ni porcentajes de reducción sin evidencia. La similitud CLIP conserva cuatro decimales y un límite interpretativo explícito.
+El ZIP conserva la salida exacta sin marcas, la copia resaltada, el mapa absoluto, original, informe, parámetros y hashes. Añade una copia para compartir con una banda visible de identificación de IA; no se usa para métricas. El aviso también se guarda en los metadatos PNG, informe y LEEME.
 
-Los estilos están en `assets/interfaz/tema.css`; `launch_app()` aplica el mismo tema localmente y en el nuevo notebook. Esta base pequeña constituye convenciones reutilizables del prototipo, no un sistema de diseño completo ya validado.
+## Base visual y revisión pendiente
 
-## Revisión pendiente para la demo
+Tema Soft de Gradio, acento teal, Arial/sans-serif, máximo 1120 px y adaptación a pantallas angostas. El foco de teclado se conserva. La leyenda usa texto además del color. Los estilos de `assets/interfaz/tema.css` se comparten entre local y Colab mediante `launch_app()`.
 
-Comprobar contraste en modo claro y oscuro, navegación con teclado, ancho móvil, lectura de nombres largos y errores, tiempo de espera en Colab y comprensión del informe. Registrar lo observado antes de marcarlo como validado. No se ha realizado una prueba de usabilidad con Julia.
+Las pruebas comprueban el cálculo del resaltado, la conservación de píxeles, el registro descargable y la estructura de componentes. El host de navegador no estuvo disponible al intentar revisar esta versión: quedan pendientes la captura real, contraste claro/oscuro, móvil, teclado y una prueba de comprensión con una persona. No se da por realizada una prueba de usabilidad con Julia.
