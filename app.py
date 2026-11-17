@@ -1,9 +1,12 @@
 """Punto de entrada de la interfaz de AstroRestore AI."""
 import gradio as gr
 import json
+import hashlib
+import os
 from pathlib import Path
 from src.analysis import analyze_images, render_report, render_user_report
-from src.diffusion import run_diffusion
+from src.diffusion import prepare_image, run_diffusion
+from src.diffbir_bridge import get_session
 from src.export import export_result
 from src.honesty import DISCLAIMER, HIGHLIGHT_NOTICE, difference_map, highlight_changes
 
@@ -11,15 +14,28 @@ ROOT = Path(__file__).resolve().parent
 THEME = gr.themes.Soft(primary_hue="teal", neutral_hue="slate", font=["Arial", "sans-serif"])
 
 
-def process_image(path, strength, steps, seed, size):
-    """Procesa con SD + Tile y conserva la comparación preparada."""
+def selected_engine():
+    """El notebook configura DiffBIR; se conserva SD/Tile para CPU local e historial."""
+    name = os.environ.get("ASTRORESTORE_ENGINE", "sd_tile")
+    if name not in ("sd_tile", "diffbir"):
+        raise ValueError("ASTRORESTORE_ENGINE debe ser sd_tile o diffbir.")
+    return name
+
+
+def process_image(path, strength, steps, seed, size, progress=None):
+    """Procesa una foto propia con el motor configurado; no inventa una referencia."""
     if not path:
         raise gr.Error("Subí una imagen PNG o TIFF antes de ejecutar la prueba.")
     try:
-        prepared, processed, metadata = run_diffusion(
-            path, strength=float(strength), steps=int(steps),
-            seed=int(seed), max_size=int(size), controlnet_tile=True, controlnet_scale=1.0,
-        )
+        if selected_engine() == "diffbir":
+            prepared = prepare_image(path, max_size=256)
+            prepared, processed, metadata = get_session().infer(prepared, progress=progress or (lambda *_a, **_k: None))
+            metadata["sha256_original"] = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        else:
+            prepared, processed, metadata = run_diffusion(
+                path, strength=float(strength), steps=int(steps),
+                seed=int(seed), max_size=int(size), controlnet_tile=True, controlnet_scale=1.0,
+            )
         return prepared, processed, (prepared, processed), difference_map(prepared, processed), metadata
     except (ValueError, OSError, RuntimeError) as error:
         raise gr.Error(str(error)) from error
@@ -42,7 +58,7 @@ def complete_analysis(state):
                   "de visión para esta ejecución. El detalle técnico queda en el registro descargable.")
     try:
         archive = export_result(before, after, metadata, report, path)
-    except OSError as error:
+    except (OSError, ValueError) as error:
         archive = None
         report += "\n\nNo se pudo preparar la descarga. Probá reintentar el informe y la descarga."
     return report, metadata, archive
@@ -51,7 +67,7 @@ def complete_analysis(state):
 def run_complete(path, strength, steps, seed, size, progress=gr.Progress()):
     """Recorrido completo; no calcula métricas sin referencia conocida."""
     progress(0.05, desc="Preparando la reconstrucción; la primera vez puede tardar más")
-    result = process_image(path, strength, steps, seed, size)
+    result = process_image(path, strength, steps, seed, size, progress=progress)
     state = (result[0], result[1], result[4], path)
     progress(0.8, desc="Comparando las imágenes y preparando tu informe")
     report, metadata, archive = complete_analysis(state)
@@ -66,6 +82,18 @@ def review_image(state, show_changes=True):
         return None
     before, after, _, _ = state
     return highlight_changes(before, after) if show_changes else after.copy()
+
+
+def first_cleaning(state):
+    """Vista opcional de la primera etapa, sin ejecutar modelos ni cambiar el estado."""
+    if not state:
+        return None
+    path = state[2].get("intermedios", {}).get("limpieza_previa.png")
+    if not path:
+        return None
+    from PIL import Image
+    with Image.open(path) as image:
+        return image.copy()
 
 
 def run_for_user(path, strength, show_changes=True, progress=gr.Progress()):
@@ -103,10 +131,15 @@ def load_recorded_result():
 
 def create_app() -> gr.Blocks:
     """Construye la interfaz sin descargar modelos al iniciarse."""
+    diffbir = selected_engine() == "diffbir"
     with gr.Blocks(title="AstroRestore AI", analytics_enabled=False) as app:
         gr.Markdown("ASTROFOTOGRAFÍA · EXPLORACIÓN CON IA\n# AstroRestore AI\nCompará los cambios. Conservá tu original.", elem_id="cabecera")
-        gr.Markdown("**Versión experimental.** Las pruebas realizadas todavía no demostraron "
-                    "una mejor limpieza que conservar la foto de entrada.")
+        gr.Markdown(
+            "**Versión experimental.** En una imagen de prueba mejoró el parecido global, "
+            "pero también cambió formas de galaxias. Revisá los detalles antes de compartirla."
+            if diffbir else
+            "**Versión experimental.** Las pruebas realizadas todavía no demostraron una mejor limpieza que conservar la foto de entrada."
+        )
         gr.Markdown(DISCLAIMER, elem_id="aviso-reconstruccion")
         gr.Markdown("## 1 · Subí tu foto del cielo\nElegí una imagen PNG o TIFF. "
                     "Esta versión trabaja sobre una copia pequeña, de hasta 256 píxeles de lado. "
@@ -118,12 +151,18 @@ def create_app() -> gr.Blocks:
                         "Algunas herramientas astronómicas guardan TIFF de 16 bits. Si tu archivo "
                         "no es compatible, exportá desde tu editor una **copia RGB de 8 bits** "
                         "y conservá el original de mayor profundidad.")
-        strength = gr.Slider(0.1, 0.5, value=0.1, step=0.05,
-                             label="Cuánto puede cambiar la IA tu foto",
-                             info="Empezá con un cambio pequeño. Aumentarlo permite modificar más detalles; no significa quitar más ruido.")
+        if diffbir:
+            strength = gr.State(None)
+            gr.Markdown("Primero se hace una limpieza y después una reconstrucción con IA. "
+                        "La reconstrucción puede cambiar detalles aunque la imagen parezca más limpia. "
+                        "Esta versión usa una configuración fija; no ofrece un porcentaje de limpieza.")
+        else:
+            strength = gr.Slider(0.1, 0.5, value=0.1, step=0.05,
+                                 label="Cuánto puede cambiar la IA tu foto",
+                                 info="Empezá con un cambio pequeño. Aumentarlo permite modificar más detalles; no significa quitar más ruido.")
         button = gr.Button("Procesar y comparar", variant="primary")
-        gr.Markdown("La primera vez puede tardar más mientras se prepara la IA. "
-                    "Si una salida se bloquea, te avisaremos y tu original seguirá intacto.")
+        gr.Markdown("La primera vez puede tardar varios minutos mientras se prepara la IA. "
+                    "Si no puede terminar, te avisaremos y tu original seguirá intacto.")
         gr.Markdown("## 2 · Compará y revisá los cambios\nUna imagen convincente puede contener "
                     "detalles generados. Revisá las mismas regiones antes de compartirla.")
         with gr.Row():
@@ -133,6 +172,13 @@ def create_app() -> gr.Blocks:
         gr.Markdown(HIGHLIGHT_NOTICE, elem_id="leyenda-cambios")
         gr.Markdown("Mové el deslizador y compará estrellas, fondo y contornos. "
                     "La foto de entrada también se ajusta al tamaño de trabajo para comparar las mismas regiones.")
+        first = None
+        if diffbir:
+            with gr.Accordion("Ver la imagen antes de reconstruir detalles", open=False):
+                gr.Markdown("Esta es la primera limpieza, antes de la reconstrucción generativa. "
+                            "También puede suavizar detalles. Comparala con tu foto y con el resultado final; "
+                            "una apariencia más nítida no garantiza mayor fidelidad.")
+                first = gr.Image(label="Primera limpieza, antes de reconstruir detalles", interactive=False, format="png")
         gr.Markdown("## 3 · Leé el informe y guardá tu resultado")
         report = gr.Markdown("Después de procesar verás una lectura orientativa y recomendaciones para revisar tu imagen.")
         retry = gr.Button("Reintentar informe y descarga")
@@ -147,6 +193,8 @@ def create_app() -> gr.Blocks:
         retry.click(retry_for_user, inputs=[state], outputs=[report, archive, state],
                     concurrency_limit=1, concurrency_id="procesamiento")
         show_changes.change(review_image, inputs=[state, show_changes], outputs=[highlighted], queue=False)
+        if first is not None:
+            state.change(first_cleaning, inputs=[state], outputs=[first], queue=False)
         upload.change(lambda: (None, None, "Procesá esta foto para generar su informe.", None, None),
                       outputs=[comparison, highlighted, report, archive, state], queue=False)
     app.queue(default_concurrency_limit=1)

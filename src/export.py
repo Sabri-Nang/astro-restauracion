@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
+import shutil
 from PIL import Image, ImageDraw, PngImagePlugin
 
 from src.honesty import (
@@ -33,7 +34,17 @@ def export_result(before, after, metadata, report, source_path):
     source = Path(source_path)
     original = folder / ("original" + source.suffix.lower())
     original.write_bytes(source.read_bytes())
+    intermediate_names = ("limpieza_previa.png", "condicion_reducida.png")
+    for name, path in metadata.get("intermedios", {}).items():
+        if name not in intermediate_names:
+            raise ValueError("Etapa intermedia no reconocida.")
+        stage = Path(path)
+        if hashlib.sha256(stage.read_bytes()).hexdigest() != metadata.get("artefactos", {}).get(name):
+            raise ValueError("La etapa intermedia cambió desde el procesamiento.")
+        shutil.copyfile(stage, folder / name)
     record = dict(metadata)
+    if "intermedios" in record:
+        record["intermedios"] = {name: name for name in record["intermedios"]}
     record["advertencia"] = DISCLAIMER
     record["mapa_diferencias"] = DIFFERENCE_NOTICE
     record["resaltado_de_cambios"] = dict(HIGHLIGHT_SETTINGS)
@@ -49,6 +60,7 @@ def export_result(before, after, metadata, report, source_path):
         + HIGHLIGHT_NOTICE + "\n"
         "zonas_para_revisar.png es una copia marcada; salida_ia.png conserva la salida sin marcas.\n"
         "para_compartir_con_aviso.png incluye una banda visible de identificación de IA; no usarla para métricas.\n"
+        "Si se usó DiffBIR, limpieza_previa.png conserva la primera etapa SCUNet, que no es difusión.\n"
         "La entrada preparada es la comparación válida con la salida; el original puede tener otro tamaño.\n"
         "Sin referencia confiable no se calculan PSNR ni SSIM. Los parámetros y hashes permiten rastrear "
         "esta ejecución; las diferencias de hardware pueden impedir reproducirla bit a bit.\n"

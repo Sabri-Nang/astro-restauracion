@@ -9,8 +9,7 @@ from PIL import Image, ImageFilter
 DISCLAIMER = (
     "Tu original se conserva. Esta imagen fue reconstruida por IA y puede contener "
     "detalles generados o haber perdido otros. Revisá los cambios antes de compartirla. "
-    "Esta prueba no demuestra reducción de ruido ni autenticidad científica. "
-    "La intensidad controla la transformación generativa, no el ruido eliminado."
+    "No se garantiza recuperar información perdida ni autenticidad científica."
 )
 DIFFERENCE_NOTICE = (
     "Mapa de diferencias absolutas entre la entrada preparada y la salida. "
