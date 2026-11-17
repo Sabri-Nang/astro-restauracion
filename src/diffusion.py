@@ -31,6 +31,167 @@ class SafetyFilterBlockedError(RuntimeError):
     """La salida fue rechazada por el filtro de contenido del pipeline."""
 
 
+class DiffBIRRuntime:
+    """Motor CUDA reutilizable para fotos propias, sin referencia de evaluación.
+
+    Vive en el proceso aislado de colab/diffbir. El ensayo controlado conserva su
+    recorrido en diffbir_trial.py; aquí nunca se busca ni se recibe una referencia.
+    """
+
+    def __init__(self, upstream: Path, cache: Path):
+        import subprocess
+        import sys
+        import os
+        import torch
+        from src.diffbir_trial import UPSTREAM_REVISION, check_checkpoint_dependencies
+
+        if not torch.cuda.is_available():
+            raise RuntimeError("DiffBIR necesita CUDA; ejecutá la aplicación en Colab con GPU.")
+        if sys.version_info[:2] != (3, 12) or not torch.__version__.startswith("2.2.2"):
+            raise RuntimeError("DiffBIR requiere el entorno aislado de colab/diffbir.")
+        check_checkpoint_dependencies()
+        revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=upstream, text=True).strip()
+        dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=upstream, text=True).strip()
+        if revision != UPSTREAM_REVISION or dirty:
+            raise RuntimeError("La fuente de DiffBIR no coincide con la revisión fijada.")
+        os.environ["ATTN_MODE"] = "sdp"
+        sys.path.insert(0, str(upstream.resolve()))
+        self.upstream, self.cache = upstream, cache
+        self.cache.mkdir(parents=True, exist_ok=True)
+        self.cleaner = self.model = self.diffusion = None
+        self.weight_records = {}
+
+    def _instantiate(self, filename):
+        from omegaconf import OmegaConf
+        from diffbir.utils.common import instantiate_from_config
+        return instantiate_from_config(OmegaConf.load(self.upstream / "configs/inference" / filename))
+
+    def _weights(self, name):
+        from src.diffbir_trial import download_weight, load_checkpoint_cpu
+        path, record = download_weight(name, self.cache)
+        weights, mapped = load_checkpoint_cpu(path)
+        record["carga_cpu_mmap"] = mapped
+        self.weight_records[name] = record
+        weights = weights.get("state_dict", weights)
+        if next(iter(weights)).startswith("module."):
+            weights = {key.removeprefix("module."): value for key, value in weights.items()}
+        return weights
+
+    def process(self, before: Image.Image, destination: Path, on_phase=lambda _: None):
+        """Devuelve reconstrucción, primera limpieza y registro sin métricas inventadas."""
+        import gc
+        import numpy as np
+        import torch
+        import torch.nn.functional as functional
+        from diffbir.pipeline import SCUNetPipeline
+        from src.diffbir_trial import PARAMETERS, UPSTREAM_REVISION
+
+        if before.mode != "RGB" or min(before.size) < 64 or max(before.size) > 256:
+            raise ValueError("Se requiere la copia RGB preparada de 64 a 256 píxeles por lado.")
+        destination.mkdir(parents=True, exist_ok=False)
+        started = perf_counter()
+        reused = self.model is not None
+        torch.cuda.reset_peak_memory_stats()
+        on_phase("primera_limpieza")
+        if self.cleaner is None:
+            cleaner = self._instantiate("scunet.yaml")
+            cleaner.load_state_dict(self._weights("scunet"), strict=True)
+            self.cleaner = cleaner.eval()
+        self.cleaner.to("cuda")
+        noisy = np.asarray(before).copy()
+        lq = torch.tensor(noisy[None], dtype=torch.float32, device="cuda").div(255).permute(0, 3, 1, 2).contiguous()
+        captured = {}
+        handle = self.cleaner.register_forward_hook(lambda _m, _i, result: captured.update(native=result.detach().clone()))
+        torch.manual_seed(42)
+        try:
+            with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16):
+                condition = SCUNetPipeline(self.cleaner, None, None, None, "cuda").apply_cleaner(lq, False, 512, 256)
+        finally:
+            handle.remove()
+            self.cleaner.to("cpu")
+
+        def save_tensor(tensor, filename):
+            if not torch.isfinite(tensor).all():
+                raise ValueError("La reconstrucción contiene valores no finitos.")
+            pixels = tensor.detach().float().mul(255).clamp(0, 255).to(torch.uint8)
+            image = Image.fromarray(pixels[0].permute(1, 2, 0).cpu().numpy())
+            image.save(destination / filename)
+            return image
+
+        first = save_tensor(captured.pop("native"), "limpieza_previa.png")
+        save_tensor(condition, "condicion_interna.png")
+        save_tensor(functional.interpolate(condition, size=(before.height, before.width), mode="bicubic", antialias=True), "condicion_reducida.png")
+        del lq
+        gc.collect()
+        torch.cuda.empty_cache()
+        on_phase("preparando_reconstruccion")
+        if self.model is None:
+            # Cargar y liberar cada checkpoint por separado reduce el pico de RAM.
+            model = self._instantiate("cldm.yaml")
+            weights = self._weights("sd21")
+            _, missing = model.load_pretrained_sd(weights)
+            if missing:
+                raise RuntimeError("Faltan pesos de SD 2.1; se interrumpe la reconstrucción.")
+            del weights
+            gc.collect()
+            weights = self._weights("ircontrolnet")
+            model.load_controlnet_from_ckpt(weights)
+            del weights
+            gc.collect()
+            model.eval()
+            model.cast_dtype(torch.float16)
+            model.to("cuda")
+            diffusion = self._instantiate("diffusion.yaml").to("cuda")
+            self.model, self.diffusion = model, diffusion
+
+        class ConditionedPipeline(SCUNetPipeline):
+            def apply_cleaner(self, *_args, **_kwargs):
+                return condition
+
+            def apply_cldm(self, *args, **kwargs):
+                decoded = super().apply_cldm(*args, **kwargs)
+                if not torch.isfinite(decoded).all():
+                    raise ValueError("La difusión devolvió valores no finitos.")
+                return decoded
+
+        on_phase("reconstruyendo")
+        sampling = perf_counter()
+        torch.manual_seed(42)
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16):
+            result = ConditionedPipeline(None, self.model, self.diffusion, None, "cuda").run(
+                noisy[None], steps=50, strength=1.0,
+                cleaner_tiled=False, cleaner_tile_size=512, cleaner_tile_stride=256,
+                vae_encoder_tiled=True, vae_encoder_tile_size=256,
+                vae_decoder_tiled=True, vae_decoder_tile_size=256,
+                cldm_tiled=True, cldm_tile_size=512, cldm_tile_stride=256,
+                pos_prompt=PARAMETERS["prompt_positivo"], neg_prompt=PARAMETERS["prompt_negativo"],
+                cfg_scale=4.0, start_point_type="noise", sampler_type="spaced", noise_aug=0,
+                rescale_cfg=False, s_churn=0, s_tmin=0, s_tmax=300, s_noise=1, eta=1, order=1,
+            )
+        torch.cuda.synchronize()
+        if result.dtype != np.uint8 or result.shape != (1, before.height, before.width, 3):
+            raise ValueError("La reconstrucción no conserva las dimensiones esperadas.")
+        after = Image.fromarray(result[0])
+        after.save(destination / "salida_diffbir.png")
+        before.save(destination / "entrada_preparada.png")
+        metadata = {
+            "motor": "diffbir_v2", "revision_diffbir": UPSTREAM_REVISION,
+            "parametros": dict(PARAMETERS), "modelo_reutilizado": reused,
+            "pesos": dict(self.weight_records), "referencia_usada_para_generar": False,
+            "dimensiones": list(before.size), "condicion_interna_dimensiones": [condition.shape[3], condition.shape[2]],
+            "semilla": 42, "pasos_configurados": 50,
+            "segundos_reconstruccion": perf_counter() - sampling,
+            "segundos_procesamiento_total": perf_counter() - started,
+            "gpu": torch.cuda.get_device_name(0), "pico_memoria_cuda_bytes": torch.cuda.max_memory_allocated(),
+            "versiones": {name: version(name) for name in ("torch", "torchvision", "numpy", "pillow")},
+            "limites": "Difusión, remuestreo y wavelet pueden alterar estructuras. Una prueba global favorable no valida autenticidad ni generalización. No se calculan métricas sin referencia.",
+            "filtro_contenido": "No incluido por el pipeline oficial DiffBIR; no se desactiva ni se utiliza el filtro de SD/Tile.",
+            "artefactos": {name: hashlib.sha256((destination / name).read_bytes()).hexdigest() for name in
+                           ("entrada_preparada.png", "limpieza_previa.png", "condicion_interna.png", "condicion_reducida.png", "salida_diffbir.png")},
+        }
+        return before.copy(), after, first, metadata
+
+
 def prepare_image(path: str | Path, max_size: int = 256) -> Image.Image:
     """Lee PNG/TIFF de 8 bits y ajusta a múltiplos de ocho, sin recortar."""
     if max_size not in (256, 512):
