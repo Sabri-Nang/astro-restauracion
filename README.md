@@ -289,30 +289,10 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 
 ## Trabajo Futuro
 
-### Estado frente a la consigna
-
-**Implementado:** persona y proyecto declarados; repositorio e historial de commits; Python 3.12 y uv con bloqueos; interfaz Gradio; difusión de Hugging Face; análisis visual con CLIP; comparación; avisos y diferencias; exportación con identificación de IA; conceptos de procesamiento y uso de agentes documentados. La app se probó de punta a punta con los siete pares gaussianos y con imágenes adicionales en Colab. La apariencia plausible demuestra funcionamiento visual, no autenticidad científica.
-
-**Cinco imágenes de la etapa 2:** `outputs/etapa2/resumen.json` registra cinco ejecuciones técnicas correctas con SD 1.5: `potw1803a`, `potw1428a`, `heic0503a`, `heic1520a` y `potw1408a`. El registro y sus imágenes son locales, no se incluyen al clonar. Acreditan ese prototipo histórico; no son cinco pruebas del motor DiffBIR actual ni una evaluación de eliminación de ruido. La validación posterior de la app actual se realizó con los siete pares gaussianos y con imágenes adicionales en Colab.
-
-### Para cerrar la entrega
-
-- [x] Ejecutar y registrar en Colab al menos cinco imágenes distintas con la revisión final: carga, progreso real, comparación, análisis y ZIP. La ejecución incluyó los siete pares gaussianos y pruebas con imágenes adicionales; se conserva la distinción entre plausibilidad visual y fidelidad.
-- [x] Validar comprensión del flujo de uso con otra persona.
-- [ ] Revisar específicamente teclado, contraste visual, móvil y lector de pantalla.
-- [x] Incorporar capturas actuales del uso y de la sección **Qué es real y qué es inventado**.
-- [x] Enlazar el video demo de cinco minutos con problema, flujo completo, resultados y reflexión.
-- [x] Probar instalación desde cero de la revisión final en otra PC.
-- [ ] Completar reflexión personal de la autora.
-- [ ] Preparar defensa y completar el formulario de entrega con los enlaces finales.
-
-### Mejoras y comprobaciones adicionales
-
-- [x] Restaurar los otros seis pares gaussianos y realizar pruebas con imágenes adicionales.
-- [ ] Ampliar las pruebas a fotos de aficionados con procedencia y permisos.
-- [ ] Cotejar el PNG final original del ensayo completo contra su ZIP.
-
-PSNR/SSIM/LPIPS, línea base clásica, lotes, historial, varios modelos y despliegue público son opcionales; no bloquean los criterios mínimos. No se necesita entrenar un modelo ni incorporar RAW/FITS para cumplir el alcance acordado. Posponer funciones complejas hasta cerrar la evidencia de entrega.
+- [ ] Ampliar la compatibilidad para aceptar otros formatos de imagen, incluidos TIFF de 16 y 32 bits por canal.
+- [ ] Evaluar distintos modelos de restauración y generar resultados comparables para analizar sus diferencias.
+- [ ] Incorporar un selector de limpieza que permita elegir qué tipo de ruido visual se quiere reducir en particular.
+- [ ] Ampliar las pruebas con imágenes astronómicas de procedencia documentada y distintos niveles de ruido.
 
 ## Reflexiones y Aprendizajes
 
