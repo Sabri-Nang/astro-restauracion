@@ -198,7 +198,11 @@ def prepare_image(path: str | Path, max_size: int = 256) -> Image.Image:
         raise ValueError("El tamaño máximo debe ser 256 o 512 píxeles.")
     with Image.open(path) as source:
         if source.format not in ("PNG", "TIFF"):
-            raise ValueError("Seleccioná una imagen PNG o TIFF.")
+            raise ValueError(
+                f"El contenido del archivo es {source.format}, aunque su nombre pueda indicar otra extensión. "
+                "Esta versión admite PNG o TIFF. Exportá una copia PNG RGB de 8 bits desde tu editor; "
+                "cambiar solo el nombre no convierte la imagen. Conservá el original."
+            )
         bits = getattr(source, "tag_v2", {}).get(258, (8,))
         if source.format == "PNG":
             # Pillow puede decodificar PNG RGB de 16 bits como RGB de 8 bits.
