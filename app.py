@@ -294,8 +294,7 @@ def complete_analysis(state):
     except (ImportError, ValueError, OSError, RuntimeError) as error:
         metadata["analisis_visual"] = {"estado": "error", "detalle": str(error)}
         report = ("### Análisis visual no disponible\n\nLa difusión terminó y sus imágenes se conservan. "
-                  "Podés descargar el resultado o reintentar solo CLIP. No hay observaciones del modelo "
-                  "de visión para esta ejecución. El detalle técnico queda en el registro descargable.")
+                  "Podés descargar el resultado o reintentar la lectura sin volver a procesar tu foto.")
     try:
         archive = export_result(before, after, metadata, report, path)
     except (OSError, ValueError) as error:
@@ -391,9 +390,9 @@ def create_app() -> gr.Blocks:
     """Tres momentos: preparar, esperar con información y revisar antes de compartir."""
     diffbir = selected_engine() == "diffbir"
     with gr.Blocks(title="AstroRestore AI", analytics_enabled=False) as interface:
-        gr.Markdown("ASTROFOTOGRAFÍA PARA EXPLORAR Y ENSEÑAR\n# AstroRestore AI\nRevisá tu foto, no solo su apariencia.", elem_id="cabecera")
-        gr.Markdown("Restauración: **DiffBIR v2 · limpieza y reconstrucción**. Análisis: **CLIP**." if diffbir else
-                    "**Modo histórico: Stable Diffusion 1.5 + ControlNet Tile**. Análisis: **CLIP**. "
+        gr.Markdown("ASTROFOTOGRAFÍA · COMPARACIÓN CON IA\n# AstroRestore AI\nRevisá tu foto, no solo su apariencia.", elem_id="cabecera")
+        gr.Markdown("Restauración: **DiffBIR v2 · limpieza y reconstrucción**. Incluye una lectura visual orientativa." if diffbir else
+                    "**Modo histórico: Stable Diffusion 1.5 + ControlNet Tile**. "
                     "Esta variante no ejecuta DiffBIR ni su limpieza intermedia.", elem_classes="texto-ayuda")
         if not can_process_here():
             gr.Markdown("**Vista local de la app.** Podés cargar y validar una foto. Para procesarla con este motor, "
@@ -464,7 +463,7 @@ def create_app() -> gr.Blocks:
                         elem_id="limites-verificacion")
             with gr.Accordion("Lectura general de la imagen · no verifica autenticidad", open=False):
                 report = gr.Markdown()
-            gr.Markdown("## 3 · Compartí con contexto\nPara tus clases, mostrá la entrada junto a la salida "
+            gr.Markdown("## 3 · Compartí con contexto\nSi compartís el resultado, mostrá la entrada junto a la salida "
                         "identificada como **Reconstruida con IA**. No la uses para mediciones ni como prueba de una estructura nueva.")
             archive = gr.File(label="Descargar imágenes e informe (ZIP)", interactive=False)
             retry = gr.Button("Reintentar lectura y preparar descarga")

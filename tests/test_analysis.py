@@ -10,9 +10,9 @@ class AnalysisTests(unittest.TestCase):
     def test_user_report_explains_preferences_without_quality_numbers(self):
         rows = [{'descripcion': 'textura granulada', 'entrada': 0.1234, 'salida': 0.2345, 'diferencia': 0.1111}]
         text = analysis.render_user_report({'afinidades': rows})
-        self.assertIn('mismas descripciones principales', text)
-        self.assertIn('observaciones independientes', text)
-        self.assertIn('no permite concluir si disminuyó el ruido', text)
+        self.assertIn('en ambas imágenes', text)
+        self.assertIn('otra observación', text)
+        self.assertIn('no confirma cuánto ruido se eliminó', text)
         self.assertNotIn('0.1234', text)
         self.assertNotIn('0.2345', text)
 
@@ -23,10 +23,10 @@ class AnalysisTests(unittest.TestCase):
             {'descripcion': 'textura granulada', 'entrada': .1, 'salida': .1},
         ]
         text = analysis.render_user_report({'afinidades': rows})
-        self.assertIn('mismas descripciones principales', text)
-        self.assertIn('no significa que las imágenes sean iguales', text)
-        self.assertIn('no significa necesariamente desenfoque', text)
-        self.assertIn('no garantiza ausencia de ruido', text)
+        self.assertIn('en ambas imágenes', text)
+        self.assertIn('puede haber cambios en los detalles', text)
+        self.assertNotIn('desenfoque', text)
+        self.assertNotIn('sin ruido', text)
 
     def test_changed_descriptions_do_not_claim_success_or_hallucination_detection(self):
         rows = [
@@ -36,10 +36,12 @@ class AnalysisTests(unittest.TestCase):
             {'descripcion': 'estructuras definidas', 'entrada': .2, 'salida': .4},
         ]
         text = analysis.render_user_report({'afinidades': rows})
-        self.assertIn('cambió la selección', text)
-        self.assertIn('no demuestra una mejora', text)
-        self.assertIn('no una detección de detalles inventados', text)
-        self.assertIn('no es una conclusión de CLIP', text)
+        self.assertIn('En el resultado', text)
+        self.assertIn('no confirma cuánto ruido se eliminó', text)
+        self.assertIn('no confirma que haya sido inventada', text)
+        self.assertNotIn('CLIP', text)
+        self.assertNotIn('clase', text)
+        self.assertNotIn('puntuaciones', text)
 
     def test_absent_reading_is_not_reported_as_unchanged_appearance(self):
         text = analysis.render_user_report({'afinidades': []})

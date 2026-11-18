@@ -71,55 +71,39 @@ def render_report(analysis: dict) -> str:
 
 
 def render_user_report(analysis: dict) -> str:
-    """Interpreta las etiquetas seleccionadas sin convertir su orden en un diagnóstico."""
+    """Lectura breve para cualquier persona; los detalles del modelo quedan en el registro."""
     rows = analysis["afinidades"]
-    lines = [
-        "### Lectura general de la imagen",
-        "CLIP es el modelo que analiza la apariencia de las imágenes. Elige entre frases "
-        "predefinidas; no escribe una descripción libre ni identifica objetos del cielo.",
-    ]
+    wording = {
+        "estructuras difusas": "formas suaves y poco delimitadas",
+        "fondo uniforme": "un fondo de aspecto uniforme",
+        "textura granulada": "una textura de aspecto granulado",
+        "estructuras definidas": "contornos de aspecto definido",
+        "textura artificial": "texturas que pueden parecer poco naturales",
+        "campo astronómico": "el aspecto de un campo de estrellas y galaxias",
+    }
+
+    def describe(labels):
+        words = [wording.get(label, label) for label in labels]
+        return " y ".join(words)
+
+    lines = ["### Una mirada a tu imagen"]
     if rows:
         before = [row["descripcion"] for row in sorted(rows, key=lambda row: row["entrada"], reverse=True)[:2]]
         after = [row["descripcion"] for row in sorted(rows, key=lambda row: row["salida"], reverse=True)[:2]]
-
-        def phrases(labels):
-            return ", ".join(f"«{label}»" for label in labels)
-
         if set(before) == set(after):
-            lines.append(f"**En esta comparación:** el modelo relacionó ambas imágenes con las mismas "
-                         f"descripciones principales: {phrases(before)}.")
-            lines.append("**Cómo interpretarlo:** estas etiquetas se mantienen, aunque sus puntuaciones "
-                         "puedan variar. Eso no significa que las imágenes sean iguales ni que la limpieza "
-                         "haya funcionado o fallado.")
+            lines.append(f"La lectura general sugiere {describe(before)} en ambas imágenes. "
+                         "Esa impresión se mantiene, aunque puede haber cambios en los detalles.")
         else:
-            lines.append(f"**Foto cargada:** el modelo la relacionó principalmente con {phrases(before)}.")
-            lines.append(f"**Reconstrucción con IA:** la relacionó principalmente con {phrases(after)}.")
-            lines.append("**Cómo interpretarlo:** cambió la selección de descripciones generales. "
-                         "Diferencias pequeñas en las puntuaciones pueden cambiar esa selección; "
-                         "esto no demuestra una mejora ni una pérdida de calidad.")
-        meanings = {
-            "estructuras difusas": "«Estructuras difusas» puede corresponder a nebulosidad extendida; no significa necesariamente desenfoque.",
-            "fondo uniforme": "«Fondo uniforme» no garantiza ausencia de ruido.",
-            "textura granulada": "«Textura granulada» sugiere parecido con una apariencia de grano; no mide cuánto ruido hay.",
-            "estructuras definidas": "«Estructuras definidas» no demuestra que se haya recuperado detalle real.",
-            "textura artificial": "«Textura artificial» es una opción de comparación, no una detección de detalles inventados.",
-            "campo astronómico": "«Campo astronómico» no identifica estrellas o galaxias concretas.",
-        }
-        explanations = [meanings[label] for label in dict.fromkeys(before + after) if label in meanings]
-        if explanations:
-            lines.append("**Qué significan esas palabras:**\n\n" + "\n".join(f"- {text}" for text in explanations))
-        lines.append(
-            "**Límite de esta lectura:** no permite concluir si disminuyó el ruido ni detectar "
-            "invenciones. Puede omitir los bordes de la foto. Los valores técnicos quedan en el ZIP."
-        )
+            lines.append(f"**En tu foto**, la lectura sugiere {describe(before)}.")
+            lines.append(f"**En el resultado**, sugiere {describe(after)}.")
+        if "textura artificial" in before + after:
+            lines.append("Que una textura parezca poco natural no confirma que haya sido inventada.")
+        lines.append("Es una impresión general de la apariencia: no confirma cuánto ruido se eliminó "
+                     "ni qué detalles corresponden al cielo real.")
     else:
-        lines.append("**No hay una lectura disponible para esta comparación.** Esto no permite "
-                     "sacar conclusiones sobre las imágenes; podés revisarlas en el visor.")
-    lines.extend([
-        "**Guía de revisión de la app (no es una conclusión de CLIP):** compará las mismas estrellas, "
-        "contornos y zonas del fondo en el visor. Las marcas amarillas muestran cambios, no invenciones. "
-        "Un detalle nuevo queda **no verificado** hasta contrastarlo con observaciones independientes.",
-        "**Para compartir en clase:** mostrá la entrada junto al resultado e indicá «Reconstruida con IA». "
-        "Conservá el original; la reconstrucción no sirve como prueba de un descubrimiento ni para mediciones científicas.",
-    ])
+        lines.append("**No hay una lectura disponible para esta comparación.** Podés seguir revisando "
+                     "las imágenes en el visor.")
+    lines.append("**Dónde mirar:** recorré las mismas estrellas, contornos y zonas del fondo en ambas imágenes. "
+                 "Si aparece un detalle nuevo, tomalo como **no verificado** hasta contrastarlo con "
+                 "otra observación. El amarillo te ayuda a encontrar cambios; no identifica invenciones.")
     return "\n\n".join(lines)
