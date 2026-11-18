@@ -10,11 +10,41 @@ class AnalysisTests(unittest.TestCase):
     def test_user_report_explains_preferences_without_quality_numbers(self):
         rows = [{'descripcion': 'textura granulada', 'entrada': 0.1234, 'salida': 0.2345, 'diferencia': 0.1111}]
         text = analysis.render_user_report({'afinidades': rows})
-        self.assertIn('mayor afinidad', text)
+        self.assertIn('mismas descripciones principales', text)
         self.assertIn('observaciones independientes', text)
-        self.assertIn('no demuestran', text)
+        self.assertIn('no permite concluir si disminuyó el ruido', text)
         self.assertNotIn('0.1234', text)
         self.assertNotIn('0.2345', text)
+
+    def test_same_descriptions_in_reverse_order_do_not_claim_equal_images(self):
+        rows = [
+            {'descripcion': 'estructuras difusas', 'entrada': .4, 'salida': .3},
+            {'descripcion': 'fondo uniforme', 'entrada': .3, 'salida': .4},
+            {'descripcion': 'textura granulada', 'entrada': .1, 'salida': .1},
+        ]
+        text = analysis.render_user_report({'afinidades': rows})
+        self.assertIn('mismas descripciones principales', text)
+        self.assertIn('no significa que las imágenes sean iguales', text)
+        self.assertIn('no significa necesariamente desenfoque', text)
+        self.assertIn('no garantiza ausencia de ruido', text)
+
+    def test_changed_descriptions_do_not_claim_success_or_hallucination_detection(self):
+        rows = [
+            {'descripcion': 'textura granulada', 'entrada': .5, 'salida': .1},
+            {'descripcion': 'estructuras difusas', 'entrada': .4, 'salida': .2},
+            {'descripcion': 'textura artificial', 'entrada': .1, 'salida': .5},
+            {'descripcion': 'estructuras definidas', 'entrada': .2, 'salida': .4},
+        ]
+        text = analysis.render_user_report({'afinidades': rows})
+        self.assertIn('cambió la selección', text)
+        self.assertIn('no demuestra una mejora', text)
+        self.assertIn('no una detección de detalles inventados', text)
+        self.assertIn('no es una conclusión de CLIP', text)
+
+    def test_absent_reading_is_not_reported_as_unchanged_appearance(self):
+        text = analysis.render_user_report({'afinidades': []})
+        self.assertIn('No hay una lectura disponible', text)
+        self.assertNotIn('mismas descripciones', text)
     def test_cosines_are_not_softmax_and_report_is_traceable(self):
         class Processor:
             image_processor = SimpleNamespace(to_dict=lambda: {"crop_size":224})

@@ -71,32 +71,55 @@ def render_report(analysis: dict) -> str:
 
 
 def render_user_report(analysis: dict) -> str:
-    """Presenta las afinidades como pistas descriptivas, sin números de calidad."""
+    """Interpreta las etiquetas seleccionadas sin convertir su orden en un diagnóstico."""
     rows = analysis["afinidades"]
     lines = [
-        "### Una lectura orientativa para tu comparación",
-        "El modelo de visión compara la foto con un grupo de descripciones. "
-        "Sus preferencias son pistas generales, no comprobaciones de lo que hay en el cielo.",
+        "### Lectura general de la imagen",
+        "CLIP es el modelo que analiza la apariencia de las imágenes. Elige entre frases "
+        "predefinidas; no escribe una descripción libre ni identifica objetos del cielo.",
     ]
     if rows:
-        for key, title in (("entrada", "Foto de entrada"), ("salida", "Reconstrucción")):
-            descriptions = sorted(rows, key=lambda row: row[key], reverse=True)[:2]
-            phrases = ", ".join(f"«{row['descripcion']}»" for row in descriptions)
-            lines.append(f"**{title}:** las frases con mayor afinidad son {phrases}.")
+        before = [row["descripcion"] for row in sorted(rows, key=lambda row: row["entrada"], reverse=True)[:2]]
+        after = [row["descripcion"] for row in sorted(rows, key=lambda row: row["salida"], reverse=True)[:2]]
+
+        def phrases(labels):
+            return ", ".join(f"«{label}»" for label in labels)
+
+        if set(before) == set(after):
+            lines.append(f"**En esta comparación:** el modelo relacionó ambas imágenes con las mismas "
+                         f"descripciones principales: {phrases(before)}.")
+            lines.append("**Cómo interpretarlo:** estas etiquetas se mantienen, aunque sus puntuaciones "
+                         "puedan variar. Eso no significa que las imágenes sean iguales ni que la limpieza "
+                         "haya funcionado o fallado.")
+        else:
+            lines.append(f"**Foto cargada:** el modelo la relacionó principalmente con {phrases(before)}.")
+            lines.append(f"**Reconstrucción con IA:** la relacionó principalmente con {phrases(after)}.")
+            lines.append("**Cómo interpretarlo:** cambió la selección de descripciones generales. "
+                         "Diferencias pequeñas en las puntuaciones pueden cambiar esa selección; "
+                         "esto no demuestra una mejora ni una pérdida de calidad.")
+        meanings = {
+            "estructuras difusas": "«Estructuras difusas» puede corresponder a nebulosidad extendida; no significa necesariamente desenfoque.",
+            "fondo uniforme": "«Fondo uniforme» no garantiza ausencia de ruido.",
+            "textura granulada": "«Textura granulada» sugiere parecido con una apariencia de grano; no mide cuánto ruido hay.",
+            "estructuras definidas": "«Estructuras definidas» no demuestra que se haya recuperado detalle real.",
+            "textura artificial": "«Textura artificial» es una opción de comparación, no una detección de detalles inventados.",
+            "campo astronómico": "«Campo astronómico» no identifica estrellas o galaxias concretas.",
+        }
+        explanations = [meanings[label] for label in dict.fromkeys(before + after) if label in meanings]
+        if explanations:
+            lines.append("**Qué significan esas palabras:**\n\n" + "\n".join(f"- {text}" for text in explanations))
         lines.append(
-            "El orden puede variar por diferencias pequeñas. Estas frases no demuestran que "
-            "se haya quitado ruido ni que una textura sea artificial; los valores completos "
-            "quedan en el registro descargable."
+            "**Límite de esta lectura:** no permite concluir si disminuyó el ruido ni detectar "
+            "invenciones. Puede omitir los bordes de la foto. Los valores técnicos quedan en el ZIP."
         )
     else:
-        lines.append("No se registraron afinidades para esta comparación.")
+        lines.append("**No hay una lectura disponible para esta comparación.** Esto no permite "
+                     "sacar conclusiones sobre las imágenes; podés revisarlas en el visor.")
     lines.extend([
-        "**Qué podés comprobar aquí:** dónde cambió la apariencia de la entrada, usando "
-        "el deslizador y las zonas resaltadas. Revisá fondo, puntos luminosos y contornos.",
-        "**Qué no podemos confirmar:** qué detalles nuevos corresponden a la escena real. "
-        "Un resultado creíble no se vuelve verificable sin observaciones independientes.",
-        "**Antes de compartir:** conservá el original e indicá «Reconstruida con IA». "
-        "Para tus clases, mostrala junto a la entrada y explicá la intervención. "
-        "No la uses como evidencia de una nueva estrella o estructura ni para mediciones científicas.",
+        "**Guía de revisión de la app (no es una conclusión de CLIP):** compará las mismas estrellas, "
+        "contornos y zonas del fondo en el visor. Las marcas amarillas muestran cambios, no invenciones. "
+        "Un detalle nuevo queda **no verificado** hasta contrastarlo con observaciones independientes.",
+        "**Para compartir en clase:** mostrá la entrada junto al resultado e indicá «Reconstruida con IA». "
+        "Conservá el original; la reconstrucción no sirve como prueba de un descubrimiento ni para mediciones científicas.",
     ])
     return "\n\n".join(lines)
