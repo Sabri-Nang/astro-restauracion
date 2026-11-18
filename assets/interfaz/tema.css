@@ -21,6 +21,14 @@
   padding: 8px 16px;
   line-height: 1.55;
 }
+#revision-resultado { margin-top: 24px; }
+#limites-verificacion {
+  padding: 16px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: var(--astro-radio);
+  background: var(--block-background-fill);
+}
+#revision-resultado h3 { margin-top: 16px; }
 .gradio-container button:focus-visible, .gradio-container a:focus-visible {
   outline: 3px solid var(--astro-acento);
   outline-offset: 3px;

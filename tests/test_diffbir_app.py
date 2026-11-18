@@ -55,6 +55,26 @@ class DiffBIRAppTests(unittest.TestCase):
                     app.process_image(str(path), None, 30, 42, 256)
             session.assert_not_called()
 
+    def test_renamed_jpeg_explains_real_format_before_worker_starts(self):
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ, {'ASTRORESTORE_ENGINE': 'diffbir'}):
+            path = Path(temp) / 'parece_png.png'
+            Image.new('RGB', (64, 64)).save(path, format='JPEG')
+            with patch.object(app, 'get_session') as session:
+                with self.assertRaisesRegex(Exception, 'contenido del archivo es JPEG'):
+                    app.process_image(str(path), None, 30, 42, 256)
+            session.assert_not_called()
+
+    def test_unreadable_image_has_actionable_message_without_temporary_path(self):
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ, {'ASTRORESTORE_ENGINE': 'diffbir'}):
+            path = Path(temp) / 'entrada.tif'
+            path.write_bytes(b'no es una imagen')
+            with patch.object(app, 'get_session') as session:
+                with self.assertRaises(Exception) as caught:
+                    app.process_image(str(path), None, 30, 42, 256)
+            self.assertIn('no llegó a comenzar', str(caught.exception))
+            self.assertNotIn(str(path), str(caught.exception))
+            session.assert_not_called()
+
     def test_user_view_does_not_relabel_sd_strength_as_diffbir_control(self):
         with patch.dict(os.environ, {'ASTRORESTORE_ENGINE': 'diffbir'}):
             with patch.object(app, 'get_session') as session:
@@ -64,7 +84,7 @@ class DiffBIRAppTests(unittest.TestCase):
         self.assertFalse(any(item['type'] == 'slider' for item in components))
         self.assertTrue(any(item['type'] == 'imageslider' for item in components))
         labels = [item['props'].get('label', '') for item in components]
-        self.assertIn('Primera limpieza, antes de reconstruir detalles', labels)
+        self.assertIn('2 · Limpieza (imagen intermedia)', labels)
         self.assertNotIn('Cuánto puede cambiar la IA tu foto', labels)
 
     def test_worker_result_checks_source_and_intermediate_hashes(self):
@@ -150,6 +170,43 @@ class DiffBIRAppTests(unittest.TestCase):
                 self.assertEqual(list((Path(temp) / '.cache/diffbir').iterdir()), [])
             finally:
                 session.close()
+
+    def test_review_pairs_compare_the_selected_stages_without_running_models(self):
+        with tempfile.TemporaryDirectory() as temp:
+            before = Image.new('RGB', (64, 64), (10, 20, 30))
+            first = Image.new('RGB', (64, 64), (40, 50, 60))
+            after = Image.new('RGB', (64, 64), (100, 110, 120))
+            path = Path(temp) / 'limpieza.png'
+            first.save(path)
+            state = (before, after, {'intermedios': {'limpieza_previa.png': str(path)}}, 'foto.png')
+            with patch.object(app, 'get_session') as session, patch.object(app, 'run_diffusion') as diffusion:
+                for pair, expected_left, expected_right in (
+                    (app.REVIEW_PAIRS[0], first, after),
+                    (app.REVIEW_PAIRS[1], before, first),
+                    (app.REVIEW_PAIRS[2], before, after),
+                ):
+                    comparison, marked, explanation = app.compare_stages(state, pair, True)
+                    self.assertEqual(comparison[0].tobytes(), expected_left.tobytes())
+                    self.assertEqual(comparison[1].tobytes(), expected_right.tobytes())
+                    self.assertEqual(marked.tobytes(), app.highlight_changes(expected_left, expected_right).tobytes())
+                    raw = app.compare_stages(state, pair, False)[1]
+                    self.assertEqual(raw.tobytes(), expected_right.tobytes())
+                    self.assertIn('No significa', explanation)
+                session.assert_not_called()
+                diffusion.assert_not_called()
+            self.assertEqual(after.getpixel((0, 0)), (100, 110, 120))
+
+    def test_missing_intermediate_does_not_mislabel_comparison_or_keep_previous_photo(self):
+        before = Image.new('RGB', (64, 64), (1, 2, 3))
+        after = Image.new('RGB', (64, 64), (4, 5, 6))
+        state = (before, after, {'intermedios': {'limpieza_previa.png': 'archivo_que_no_existe.png'}}, 'foto.png')
+        comparison, _, explanation = app.compare_stages(state, app.REVIEW_PAIRS[0])
+        self.assertIs(comparison[0], before)
+        self.assertIn('no está disponible', explanation)
+        self.assertIn('cambio total', explanation)
+        reset = app.show_review(None, app.REVIEW_PAIRS[0])
+        self.assertEqual(reset[:5], (None, None, None, None, None))
+        self.assertFalse(reset[-1]['visible'])
 
 
 if __name__ == '__main__':
