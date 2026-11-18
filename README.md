@@ -20,6 +20,8 @@ La aplicación está pensada para Julia, profesora de Física y aficionada a la 
 
 **Solución:** validar su foto, seguir el procesamiento, comparar las mismas regiones de entrada, limpieza y reconstrucción, y compartir con contexto. La app no verifica autenticidad.
 
+Julia orienta las decisiones de diseño, pero la interfaz y el informe están escritos para cualquier persona aficionada: no requieren conocimientos de modelos ni asumen que se vaya a usar la imagen en una clase.
+
 ## Demo
 
 **Pendiente:** capturas o GIF de la interfaz actual y enlace al video de cinco minutos. La autora está probando la app en Colab; todavía no se conserva una validación completa del último diseño.
@@ -49,7 +51,7 @@ El video deberá mostrar problema, carga, estado del procesamiento, comparación
 - Estado persistente con etapa y tiempo; porcentaje solo para pasos medidos de reconstrucción DiffBIR, no para ruido eliminado ni avance total.
 - Visor principal, miniaturas de etapas, regiones compartidas y ampliación de píxeles ×2 sin otra inferencia.
 - Capa amarilla opcional y diferencias absolutas en la descarga; no se presentan como detección de invenciones.
-- Lectura CLIP comprensible: interpreta descripciones iguales o diferentes y separa recomendaciones de conclusiones del modelo.
+- Lectura visual breve en lenguaje cotidiano, generada a partir de CLIP: presenta impresiones generales de ambas imágenes y una guía para revisar, sin nombres de modelos, puntuaciones ni referencias a la docencia en el informe público.
 - ZIP con original, entrada preparada, salida, limpieza intermedia, condición reducida, diferencias, copia con aviso de IA, informe, parámetros y hashes.
 - Reintento de lectura y descarga sin repetir difusión.
 - Siete pares gaussianos reproducibles, [procedencia y atribución](assets/ejemplos/README.md) y [catálogo de ruido](assets/ruido_gaussiano/README.md). Son imágenes de Hubble, no capturas crudas de aficionados. `potw1849a` se añadió desde la versión TIFF de publicación 4K.
@@ -170,10 +172,16 @@ Para comprobaciones sin pesos ni GPU: `uv run --locked python -m unittest discov
 3. Pulsar **Procesar foto**. Seguir etapa y tiempo en el panel. El porcentaje de reconstrucción cuenta pasos medidos; no estima limpieza ni avance total. La preparación no muestra porcentajes ficticios. No se ofrece duración estimada ni cancelación del servidor.
 4. Revisar entrada/reconstrucción en el visor. **Ver qué cambió después de la limpieza** selecciona el otro par. Elegir región aplica el mismo recorte a ambos lados. Ampliar ×2 repite píxeles, no genera detalle nuevo.
 5. Activar opcionalmente **Mostrar cambios en amarillo**. Se marca la imagen de la derecha; las diferencias se calculan antes de recortar. Revisar estrellas, contornos y fondo. Las marcas no certifican invención ni fidelidad.
-6. Abrir **Lectura general de la imagen** si se necesita. CLIP interpreta frases; descripciones iguales no implican imágenes iguales, y descripciones distintas no demuestran mejora.
+6. Abrir **Lectura general de la imagen · no verifica autenticidad** si se necesita. El informe **Una mirada a tu imagen** describe la apariencia sugerida para la foto y el resultado; si se mantiene, reúne ambas en una sola lectura. No es una medición de limpieza. **Dónde mirar** invita a revisar las mismas estrellas, contornos y fondo. La explicación del modelo y sus puntuaciones se conserva en la documentación y el registro descargable.
 7. Descargar el ZIP. Compartir `para_compartir_con_aviso.png` junto a la entrada. Su mapa corresponde a entrada/resultado completos, independientemente del par y región elegidos en pantalla. Si falla lectura o descarga, reintentarlas sin repetir difusión.
 
 La configuración DiffBIR es fija. No hay ejemplos ni parámetros técnicos en la vista principal. Las capturas de estos pasos están pendientes.
+
+### Qué contiene la descarga
+
+`original.*` conserva los bytes del archivo cargado; `entrada_preparada.png`, la copia de trabajo; `salida_ia.png`, la reconstrucción sin marcas; `diferencias.png` y `zonas_para_revisar.png`, los cambios entre entrada y resultado completos. `para_compartir_con_aviso.png` añade una banda visible de IA. Con DiffBIR se incluyen además `limpieza_previa.png` y `condicion_reducida.png`. `informe.md` contiene la lectura y la advertencia; `parametros.json`, modelos, configuración, afinidades y hashes; `LEEME.txt` explica los límites y los archivos. Los datos técnicos no se presentan como una descripción libre de la escena. La copia con banda no debe usarse para métricas.
+
+Si falla el análisis, las imágenes se conservan y se intenta preparar su descarga con un aviso. Si también falla la exportación, el ZIP no se ofrece como disponible. El reintento no ejecuta otra difusión. Un resultado ya descargado conserva su informe original: actualizar la app no reescribe ejecuciones anteriores.
 
 ## Decisiones de Diseño
 
@@ -187,13 +195,13 @@ Se adoptó después de los resultados desfavorables de SD/Tile. La tubería comp
 
 ### Por qué CLIP
 
-Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Compara embeddings con seis frases en inglés, sin convertirlos en probabilidades. Usa CPU y recorte central a 224 píxeles, que puede omitir bordes. El informe agrupa las descripciones principales iguales, explica etiquetas ambiguas y separa la guía de revisión de las conclusiones de CLIP. Los valores exactos quedan en el ZIP.
+Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Compara embeddings con seis frases en inglés, sin convertirlos en probabilidades. Usa CPU y recorte central a 224 píxeles, que puede omitir bordes. El informe público ofrece una impresión general en lenguaje cotidiano, sin nombres de modelos, puntuaciones ni explicaciones técnicas, y sin asumir que la persona sea docente. Si se mantienen las descripciones, agrupa la lectura de ambas imágenes sin afirmar que sean iguales. Una apariencia poco natural no se presenta como detección de invenciones. Los valores exactos y la identidad del modelo quedan en el ZIP.
 
 ### Principios de Human-AI Interaction aplicados
 
 - **Transparencia:** motor visible, etapas identificadas, registro y original conservado.
 - **Control:** pares, región, ampliación y marcas sin otra inferencia; configuración DiffBIR fija y sin slider ficticio de limpieza.
-- **Explicabilidad:** “fondo uniforme” no garantiza ausencia de ruido; “estructuras difusas” no implica desenfoque; “textura artificial” no detecta invenciones.
+- **Explicabilidad:** lectura breve de apariencia sin jerga ni explicaciones de CLIP para usar la app. Un fondo que parece uniforme no demuestra ausencia de ruido; unas texturas poco naturales no certifican invención. Los detalles técnicos quedan en el README y el ZIP.
 - **Honestidad:** un detalle nuevo queda no verificado y necesita evidencia independiente.
 - **Errores:** validación previa, estado persistente y reintento sin perder imágenes.
 
@@ -226,7 +234,7 @@ Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Comp
 - Entrada de al menos 64 píxeles por lado y salida de hasta 256. Ciertas relaciones de aspecto no cumplen ese mínimo después del ajuste. Sin RAW, FITS, TIFF de mayor profundidad, desenfoque ni superresolución.
 - Siete pares gaussianos preparados; seis aún sin restauración evaluada. No hay colección validada de capturas crudas de aficionados ni referencia perfecta para fotos reales dañadas.
 - No se promete un tiempo actual: los ensayos CPU históricos de SD registraron 102–223 s por imagen y no predicen DiffBIR ni incluyen sus descargas. Colab usa sesiones y recursos temporales.
-- CLIP no localiza cambios, mide ruido ni verifica autenticidad. Su recorte puede omitir bordes.
+- CLIP no localiza cambios, no mide ruido ni verifica autenticidad. Su recorte puede omitir bordes. El informe adapta a lenguaje cotidiano las dos descripciones principales de cada imagen; no es una descripción libre ni un análisis detallado de cada región seleccionada. Cambiar de región en el visor no recalcula esa lectura.
 - El pipeline oficial DiffBIR no incluye el filtro de contenido de la variante SD/Tile; no se desactivó el filtro de esta última.
 - Capturas, demo, instalación final desde cero y revisión con usuarias pendientes. No se declara fidelidad científica ni conformidad de accesibilidad completa.
 
@@ -249,14 +257,27 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 
 ## Trabajo Futuro
 
-- [ ] Ejecutar y registrar en Colab el flujo completo de la revisión final: carga, pasos reales, comparación, CLIP, reintento y ZIP.
+### Estado frente a la consigna
+
+**Implementado:** persona y proyecto declarados; repositorio e historial de commits; Python 3.12 y uv con bloqueos; interfaz Gradio; difusión de Hugging Face; análisis visual con CLIP; comparación; avisos y diferencias; exportación con identificación de IA; conceptos de procesamiento y uso de agentes documentados. La ejecución real del ensayo DiffBIR existe en un caso. Implementar estas funciones no sustituye validar la versión final de punta a punta.
+
+**Cinco imágenes de la etapa 2:** `outputs/etapa2/resumen.json` registra cinco ejecuciones técnicas correctas con SD 1.5: `potw1803a`, `potw1428a`, `heic0503a`, `heic1520a` y `potw1408a`. El registro y sus imágenes son locales, no se incluyen al clonar. Acreditan ese prototipo histórico; no son cinco pruebas del motor DiffBIR actual ni una evaluación de eliminación de ruido. Para entregar la versión final, registrar al menos cinco casos de la app actual en Colab y conservar comparaciones y parámetros.
+
+### Para cerrar la entrega
+
+- [ ] Ejecutar y registrar en Colab al menos cinco imágenes distintas con la revisión final: carga, progreso real, comparación, análisis y ZIP. Incluir un acierto o mejora observada y un fallo, sin afirmar fidelidad donde no se demuestra.
 - [ ] Validar comprensión con Julia, teclado, contraste visual, móvil y lector de pantalla.
-- [ ] Incorporar capturas actuales y enlace al video demo de cinco minutos, incluyendo un fallo real del modelo.
+- [ ] Incorporar capturas actuales del uso y de la sección **Qué es real y qué es inventado**, y enlazar el video demo de cinco minutos con problema, flujo completo, resultados y reflexión.
 - [ ] Probar instalación desde cero de la revisión final en otra carpeta o máquina.
 - [ ] Completar reflexión personal de la autora y elegir licencia del código.
+- [ ] Preparar defensa y completar el formulario de entrega con los enlaces finales.
+
+### Mejoras y comprobaciones adicionales
+
 - [ ] Ampliar evaluación a los otros seis pares y, posteriormente, fotos de aficionados con procedencia y permisos.
 - [ ] Cotejar el PNG final original del ensayo completo contra su ZIP.
-- [ ] Preparar defensa y entrega. Posponer nuevas funciones complejas hasta cerrar los criterios obligatorios.
+
+PSNR/SSIM/LPIPS, línea base clásica, lotes, historial, varios modelos y despliegue público son opcionales; no bloquean los criterios mínimos. No se necesita entrenar un modelo ni incorporar RAW/FITS para cumplir el alcance acordado. Posponer funciones complejas hasta cerrar la evidencia de entrega.
 
 ## Reflexiones y Aprendizajes
 
