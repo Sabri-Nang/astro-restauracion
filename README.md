@@ -18,7 +18,7 @@ El MVP se limita a **reducción de ruido**, dentro de la sub-tarea B del trabajo
 
 **Problema:** necesita revisar fotografías con ruido sin borrar estrellas tenues ni presentar estructuras generadas como observaciones reales.
 
-**Solución:** cargar una foto, controlar cuánto puede cambiar la IA, comparar las mismas regiones y consultar advertencias antes de compartirla. La mejora de reducción de ruido todavía debe demostrarse.
+**Solución:** cargar una foto, distinguir limpieza y reconstrucción, comparar las mismas regiones y consultar advertencias antes de compartirla. DiffBIR utiliza una configuración fija. La mejora de reducción de ruido todavía debe demostrarse en más casos.
 
 ## Demo
 
@@ -30,7 +30,7 @@ Como evidencia disponible, el [ensayo real con Tile y CLIP](assets/ejemplos/etap
 
 **Restaurar no es recuperar.** El archivo cargado se conserva intacto. Para comparar, se prepara una copia RGB reducida. La difusión reconstruye píxeles a partir de esa copia y de patrones aprendidos: puede alterar colores, borrar estrellas o generar texturas plausibles. No recupera información perdida con garantía ni separa dato e invención píxel a píxel.
 
-**Cómo lo ve Julia.** El deslizador compara entrada y reconstrucción. Las zonas amarillas señalan cambios locales para revisar; pueden desactivarse sin otra inferencia. También pueden marcar ruido modificado o detalles perdidos: no detectan invenciones. Una región sin marca tampoco garantiza fidelidad. El informe CLIP orienta la revisión y no mide cuánto ruido se eliminó.
+**Cómo lo ve Julia.** Las tres imágenes de la misma ejecución aparecen juntas: foto cargada (copia reducida), limpieza intermedia y reconstrucción con IA. El comparador comienza por limpieza frente a reconstrucción; también permite revisar entrada frente a limpieza y entrada frente a resultado final. La leyenda identifica izquierda y derecha, y el amarillo siempre corresponde al par seleccionado. Marca modificaciones, incluidos ruido alterado o detalles perdidos: no detecta invenciones. Una región sin marca tampoco garantiza fidelidad. Lo nuevo respecto de la entrada se trata como **no verificado**, no como un descubrimiento. CLIP ofrece una lectura general secundaria y no localiza invenciones ni mide limpieza.
 
 ![Zonas para revisar sobre una salida real preservada](assets/ejemplos/etapa3_tile/zonas_para_revisar.png)
 
@@ -170,8 +170,9 @@ Para probar cambios sin publicarlos, ejecutar localmente `uv run --locked python
 2. Subir una foto PNG o TIFF. «8 bits» describe los niveles de color, no los megapíxeles ni el peso: si el archivo tiene mayor profundidad, exportar una copia RGB de 8 bits y conservar el original.
 3. En DiffBIR se utiliza una configuración fija: el control `strength` anterior no se presenta como porcentaje de limpieza ni se renombra como otro parámetro. En la alternativa SD/Tile permanece **Cuánto puede cambiar la IA tu foto**, inicialmente 0,10.
 4. Pulsar **Procesar y comparar**. La app prepara una copia de hasta 256 píxeles de lado, ejecuta limpieza y difusión, y después CLIP. La primera carga puede tardar varios minutos. El proceso DiffBIR queda disponible para las siguientes fotos; la configuración no cambia entre solicitudes.
-5. Mover el deslizador y alternar **Resaltar las zonas modificadas en amarillo**. Revisar estrellas, fondo y contornos, junto con el informe orientativo. **Ver la imagen antes de reconstruir detalles** muestra la primera limpieza SCUNet: sirve para revisar qué cambió después, pero también puede suavizar información.
-6. Descargar el ZIP desde **Guardar resultado con informe**. Los parámetros completos y las afinidades CLIP están allí. Si el análisis falla tras generar la imagen, **Reintentar informe y descarga** evita repetir difusión.
+5. Ver las tres etapas juntas y empezar por **Limpieza → reconstrucción**. Mover el deslizador sobre la misma región. Elegir otro par actualiza tanto la comparación como las marcas amarillas; se pueden desactivar sin otra inferencia. La limpieza SCUNet también puede modificar detalles. Compararla con la salida incluye los ajustes de tamaño y color posteriores, no únicamente difusión.
+6. Revisar puntos luminosos, contornos y fondo. Un detalle nuevo es **no verificado**: para confirmar su presencia se necesita otra observación independiente. La sección secundaria **Lectura orientativa de la foto · no detecta invenciones** contiene el informe CLIP.
+7. Descargar el ZIP desde **Descargar imágenes e informe**. Para compartir, usar `para_compartir_con_aviso.png` junto a la entrada. El mapa del ZIP compara entrada y resultado final, independientemente del par elegido en pantalla. Los parámetros completos y las afinidades CLIP están allí. **Reintentar lectura y preparar descarga** evita repetir difusión.
 
 No se ofrecen ejemplos ni registros técnicos en la vista principal. Las capturas del recorrido se incorporarán después de revisar la interfaz real; siguen pendientes.
 
@@ -181,9 +182,25 @@ No se ofrecen ejemplos ni registros técnicos en la vista principal. Las captura
 
 Permite cargar archivos, comparar y descargar en una pantalla. Julia puede revisar el resultado sin escribir código. Se retiraron los ejemplos y el registro técnico de la vista principal por decisión de la autora para concentrar el recorrido en su propia foto.
 
+### Revisión centrada en Julia
+
+**Problema observado:** una imagen intermedia aislada bajo «Ver la imagen antes de reconstruir detalles» obliga a recordar las otras vistas y puede confundirse con una nueva acción. No permite atribuir visualmente los cambios a cada tramo del proceso. El rediseño presenta las etapas juntas, con nombres estables y comparaciones por pares. Los resultados se ocultan hasta terminar y se limpian al cambiar la foto o iniciar otra prueba.
+
+**Referencias de diseño:** [NN/g, reconocimiento frente a recuerdo](https://www.nngroup.com/articles/recognition-and-recall/), fundamenta mantener las alternativas visibles. [NASA, imágenes crudas y procesadas](https://science.nasa.gov/solar-system/multimedia/what-are-raw-images/), y [ESA/Hubble, procesamiento de imágenes](https://esahubble.org/projects/hiddentreasures/imageprocessing/), distinguen datos, representación e intervención. Se adopta esa separación para explicar las etapas; no se equipara su procesamiento científico con nuestra reconstrucción generativa. Es una revisión documental y heurística, no un benchmark de rendimiento ni un estudio realizado con usuarias.
+
+**Historias de usuario y criterios:**
+
+- Como Julia, quiero saber cuál es mi entrada y cuáles son las salidas de IA: veo las tres etapas identificadas, del mismo tamaño y de una misma ejecución; la copia reducida no se presenta como una observación auténtica certificada.
+- Como Julia, quiero revisar qué cambió después de la limpieza: el par inicial es limpieza/reconstrucción; izquierda, derecha y amarillo se refieren siempre a esas mismas imágenes. Cambiar la vista no ejecuta modelos. Si falta la imagen intermedia, se informa y se identifica la comparación total utilizada.
+- Como Julia, quiero mostrar un resultado en clase sin atribuirle un descubrimiento: veo que «modificado» no significa «inventado», que «sin marcas» no significa «real», y encuentro una copia identificada con IA para compartir junto a la entrada.
+
+**Flujo:** cargar → procesar una vez → reconocer las etapas → comparar limpieza/reconstrucción → revisar el cambio total y la limpieza si hace falta → consultar la lectura opcional → descargar y compartir con aviso. No se exige abrir el informe CLIP para entender los límites del resultado. La configuración DiffBIR sigue fija.
+
+**Validación pendiente con Julia:** comprobar si identifica sin ayuda la entrada, la limpieza y la reconstrucción; si entiende qué dos imágenes está comparando; y si explica por qué una marca amarilla no prueba una invención. Revisar teclado y móvil en Colab y registrar una captura real. Las pruebas automáticas no validan comprensión ni usabilidad con personas.
+
 ### Por qué Stable Diffusion 1.5 y ControlNet Tile
 
-Se adoptó SD 1.5 como prueba img2img por su integración con Diffusers y entradas pequeñas; Tile condicionó el resultado con la entrada, pero no mejoró frente a conservar la foto ruidosa. Se conserva esa variante para comparación e historial. DiffBIR pasó a la aplicación de Colab por su mejor resultado global en el caso probado, manteniendo visibles sus alteraciones. La primera limpieza se ofrece aparte porque obtuvo mayor fidelidad que la reconstrucción final. No se declara adecuado para todas las imágenes ni especializado en astronomía.
+Se adoptó SD 1.5 como prueba img2img por su integración con Diffusers y entradas pequeñas; Tile condicionó el resultado con la entrada, pero no mejoró frente a conservar la foto ruidosa. Se conserva esa variante para comparación e historial. DiffBIR pasó a la aplicación de Colab por su mejor resultado global en el caso probado, manteniendo visibles sus alteraciones. La limpieza se compara directamente con la reconstrucción porque obtuvo mayor fidelidad que el resultado final en ese ensayo. No se declara adecuado para todas las imágenes ni especializado en astronomía.
 
 ### Por qué CLIP como análisis descriptivo
 

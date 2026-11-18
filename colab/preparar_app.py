@@ -183,10 +183,10 @@ else:
     print('Prueba DiffBIR omitida: está seleccionado el modo aplicación.')
 """), cell("markdown", "revisar", """## Recorrido para verificar
 
-1. Subir una foto astronómica PNG o TIFF compatible. Los archivos de 16 bits requieren una copia RGB de 8 bits exportada desde el editor, conservando el original.
+1. Subir una foto astronómica PNG o TIFF compatible. Los archivos de 16 o 32 bits requieren una copia RGB de 8 bits exportada desde el editor, conservando el original.
 2. Cambiar la entrada debe limpiar resultados anteriores. La vista principal no ofrece ejemplos ni registros técnicos.
 3. Con DiffBIR pulsar **Procesar y comparar**. La configuración es fija; el strength anterior no se presenta como control de limpieza de DiffBIR. Con la variante SD/Tile el control inicial sigue en 0,10.
-4. Revisar el deslizador, las zonas amarillas, la vista opcional de primera limpieza y el informe. Las marcas indican cambios, no invenciones detectadas. Descargar el ZIP y comprobar original, salida sin marcas, primera limpieza SCUNet, copia resaltada, copia con aviso visible de IA, informe, parámetros y hashes.
+4. Ver las tres etapas juntas. Comparar primero limpieza y reconstrucción; cambiar de par debe actualizar el deslizador, la leyenda y el amarillo sin ejecutar modelos. Las marcas no identifican invenciones: los detalles nuevos quedan no verificados hasta contar con otra observación independiente. La lectura CLIP es secundaria. Descargar el ZIP y comprobar original, salida sin marcas, primera limpieza SCUNet, copia resaltada (entrada frente a resultado final), copia con aviso visible de IA, informe, parámetros y hashes.
 5. Capturar la advertencia, comparación e informe, conservando el crédito. Anotar revisión de código, GPU, duración y errores para la demo. Revisar también móvil y teclado.
 
 Si CLIP falla después de difusión, descargar las imágenes y reintentar solo el análisis. El ensayo DiffBIR real está registrado; la app integrada nueva con proceso persistente aún debe validarse en Colab. La comprobación local de su protocolo y UI no sustituye esa prueba GPU.
