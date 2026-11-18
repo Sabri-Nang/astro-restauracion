@@ -1,0 +1,60 @@
+{
+  "tipo": "experimento_controlado_gaussiano",
+  "fase": "ruido_preparado_sin_inferencia",
+  "creado_utc": "2026-11-18T02:52:20.071486+00:00",
+  "entrada_original": "potw1849a.tif",
+  "sha256_original": "c71141cbb03217b2bc840f6455ca250a73a56aeb1b5bd2f9a1d7a3681843f1ab",
+  "procedencia_declarada": {
+    "imagen": "potw1849a.tif",
+    "fuente": "https://esahubble.org/images/potw1849a/",
+    "titulo": "Clusters within clusters",
+    "fecha_publicacion": "2018-12-03",
+    "version_local": "Publication TIFF 4K; 4000 × 2250 píxeles, RGB de 8 bits por canal",
+    "url_descarga_version_local": "https://esahubble.org/media/archives/images/publicationtiff/potw1849a.tif",
+    "dimensiones_original_publicado": [
+      18281,
+      10283
+    ],
+    "credito": "NASA, ESA, J. Mack, and J. Madrid et al.",
+    "licencia": "CC BY 4.0",
+    "url_licencia": "https://creativecommons.org/licenses/by/4.0/",
+    "condiciones_uso": "https://esahubble.org/copyright/",
+    "registro": "assets/ejemplos/README.md",
+    "modificaciones": "Desde el TIFF de publicación local: copia RGB de 8 bits, reducción LANCZOS a lado máximo 256 y múltiplos de ocho, sin recorte ni ampliación; ruido gaussiano añadido después, media 0, sigma 0,03 y semilla 123. TIFF local intacto."
+  },
+  "dimensiones": [
+    256,
+    144
+  ],
+  "modo": "RGB",
+  "python": "3.12.10",
+  "pillow": "12.3.0",
+  "lado_maximo": 256,
+  "preparacion": "RGB 8 bits, LANCZOS, sin recorte ni ampliación, lados múltiplos de ocho",
+  "ruido": {
+    "tipo": "gaussiano_aditivo",
+    "media_teorica": 0.0,
+    "sigma_normalizada": 0.03,
+    "sigma_equivalente_8bits": 7.6499999999999995,
+    "semilla_ruido": 123,
+    "generador": "PCG64",
+    "numpy": "2.5.4",
+    "escala_calculo": [
+      0.0,
+      1.0
+    ],
+    "canales": "RGB; muestra independiente por píxel y canal",
+    "aplicacion": "Después del redimensionamiento; sobre valores RGB publicados, sin linealización",
+    "recorte": "clip [0, 1] antes de redondear al entero más cercano y convertir a uint8",
+    "fraccion_muestras_recortadas_inferior": 0.01658347800925926,
+    "fraccion_muestras_recortadas_superior": 2.712673611111111e-05,
+    "advertencia": "Degradación sintética; no representa una calibración física del sensor."
+  },
+  "archivos_sha256": {
+    "referencia_preparada.png": "a355310c69bced65dac3f83456333e3d0c13022a23aedc0e35d8f70cb76f49d6",
+    "entrada_ruidosa.png": "f14fe68a156a32425ce45ef42ec35d5f9bd97c05cc554cc5eba46138aacaed73"
+  },
+  "alcance_referencia": "Referencia para esta degradación sintética; no se supone libre de ruido ni científicamente perfecta.",
+  "evaluacion_visual": "Pendiente: revisar fondo, estrellas tenues y estructuras difusas antes de ejecutar difusión.",
+  "inferencia_ejecutada": false
+}

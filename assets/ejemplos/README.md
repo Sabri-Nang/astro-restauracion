@@ -14,7 +14,8 @@ Después de clonar el repositorio:
    ```
 
 2. Abrir la ficha de origen de cada imagen incluida en la tabla y descargar
-   **Fullsize Original**, en formato TIFF.
+   **Fullsize Original**, en formato TIFF, salvo `potw1849a`, para la que se usa
+   **Publication TIFF 4K**. Sus dimensiones locales se distinguen en el registro.
 3. Guardar cada archivo en `assets/ejemplos/originales/` con el nombre indicado.
 
 Los enlaces locales de la tabla funcionarán después de descargar las imágenes;
@@ -30,6 +31,7 @@ en GitHub se deben utilizar los enlaces a las fichas de origen.
 | [heic0503a.tif](originales/heic0503a.tif) | Estrella V838 Monocerotis (V838 Mon) y las nubes de polvo circundantes, observadas con la cámara ACS de Hubble. La imagen muestra un eco de luz: la iluminación del polvo por el aumento de brillo de la estrella ocurrido en 2002 revela sus estructuras. | TIFF; 3400 × 3382 píxeles. | ESA/Hubble, `heic0503a`; 3 de febrero de 2005. [Ficha de origen: Light continues to echo three years after stellar outburst](https://esahubble.org/images/heic0503a/). | NASA, ESA, and The Hubble Heritage Team (AURA/STScI). Conservar este crédito completo. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), conforme a las [condiciones de ESA/Hubble](https://esahubble.org/copyright/). | Original intacto. Derivadas de la validación técnica de etapa 2: preparación RGB de 8 bits, LANCZOS con lado máximo 256 y salida de Stable Diffusion 1.5 (intensidad 0,5, semilla 42, dos pasos efectivos). Sin ruido sintético añadido; se observaron alteraciones visuales y no se afirma restauración validada. Registro local: outputs/etapa2/heic0503a/parametros.json. |
 | [heic1520a.tif](originales/heic1520a.tif) | Sección de la nebulosa del Velo, un remanente de supernova, en la región NGC 6960, también conocida como nebulosa de la Escoba de la Bruja. Observación de Hubble con la cámara WFC3 que muestra estructuras filamentosas de gas. | TIFF; 10681 × 7121 píxeles. | ESA/Hubble, `heic1520a`; 24 de septiembre de 2015. [Ficha de origen: Revisiting the Veil Nebula](https://esahubble.org/images/heic1520a/). | NASA, ESA, Hubble Heritage Team. Conservar este crédito completo. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), conforme a las [condiciones de ESA/Hubble](https://esahubble.org/copyright/). | Original intacto. Derivadas de la validación técnica de etapa 2: preparación RGB de 8 bits, LANCZOS con lado máximo 256 y salida de Stable Diffusion 1.5 (intensidad 0,5, semilla 42, dos pasos efectivos). Sin ruido sintético añadido; se observaron alteraciones visuales y no se afirma restauración validada. Registro local: outputs/etapa2/heic1520a/parametros.json. |
 | [potw1408a.tif](originales/potw1408a.tif) | Cúmulo estelar joven LH63, parcialmente inmerso en la nebulosa de emisión LHA 120-N 51 (N51), una región de formación estelar de la Gran Nube de Magallanes. Observación de Hubble con la cámara WFPC2 que muestra estrellas jóvenes, gas y polvo. | TIFF; 1502 × 739 píxeles. | ESA/Hubble, `potw1408a`; 24 de febrero de 2014. [Ficha de origen: Cloaked in red](https://esahubble.org/images/potw1408a/). | NASA, ESA, and D. Gouliermis (University of Heidelberg). Acknowledgement: Luca Limatola. Conservar el crédito y el reconocimiento completos. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), conforme a las [condiciones de ESA/Hubble](https://esahubble.org/copyright/). | Original intacto. Derivadas de la validación técnica de etapa 2: preparación RGB de 8 bits, LANCZOS con lado máximo 256 y salida de Stable Diffusion 1.5 (intensidad 0,5, semilla 42, dos pasos efectivos). Sin ruido sintético añadido; se observaron alteraciones visuales y no se afirma restauración validada. Registro local: outputs/etapa2/potw1408a/parametros.json. |
+| [potw1849a.tif](originales/potw1849a.tif) | Campo del cúmulo de galaxias de Coma, observado con ACS de Hubble en las bandas ópticas B (475 nm) e I (814 nm). La publicación describe cúmulos globulares entre las galaxias, ligados al cúmulo de Coma. | TIFF de publicación 4K local: 4000 × 2250 píxeles, RGB de 8 bits por canal. La ficha publica 18281 × 10283 píxeles para la versión de tamaño completo. | ESA/Hubble, `potw1849a`; 3 de diciembre de 2018. [Ficha de origen: Clusters within clusters](https://esahubble.org/images/potw1849a/). [Descarga Publication TIFF 4K](https://esahubble.org/media/archives/images/publicationtiff/potw1849a.tif). | NASA, ESA, J. Mack, and J. Madrid et al. Conservar este crédito completo. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), conforme a las [condiciones de ESA/Hubble](https://esahubble.org/copyright/). | TIFF local intacto; copia RGB de 8 bits, reducción LANCZOS a 256 × 144 y ruido gaussiano de media 0, sigma 0,03 y semilla 123, añadido después de reducir. Par conservado en assets/ruido_gaussiano/potw1849a_sigma0.03_seed123_size256/. Sin inferencia ni restauración evaluada. |
 
 ## Condiciones de uso y conservación
 
@@ -39,12 +41,12 @@ en GitHub se deben utilizar los enlaces a las fichas de origen.
 
 ## Derivadas conservadas
 
-Los seis originales tienen una referencia preparada y una copia con ruido en
+Los siete TIFF locales tienen una referencia preparada y una copia con ruido en
 [ruido_gaussiano](../ruido_gaussiano/README.md). Se usaron LANCZOS, lado máximo
 256, dimensiones múltiplos de ocho y ruido gaussiano de media 0, sigma 0,03 y
 semilla 123, añadido después de reducir. Cada carpeta conserva imágenes, fuente,
 crédito completo, licencia, modificaciones y hashes en `experimento.json` y
-`reproduccion.json`. El par de `potw1803a` fue evaluado; las cinco copias nuevas
+`reproduccion.json`. El par de `potw1803a` fue evaluado; las otras seis copias
 todavía no tienen una restauración evaluada. `heic1702a` necesitó conversión
 explícita de 16 a 8 bits. Los TIFF originales permanecen intactos.
 

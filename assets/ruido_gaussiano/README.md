@@ -9,6 +9,15 @@ El 15 de noviembre de 2026 se completaron las cinco imágenes faltantes del
 conjunto de ejemplos. Son entradas para ensayos futuros: no se ejecutó difusión
 ni se evaluó su restauración. El par histórico de `potw1803a` quedó intacto.
 
+El 17 de noviembre de 2026 se agregó `potw1849a`, campo del cúmulo de Coma,
+desde el TIFF de publicación 4K local (4000 × 2250, RGB de 8 bits por canal).
+La [ficha de ESA/Hubble](https://esahubble.org/images/potw1849a/) se publicó
+el 3 de diciembre de 2018. Crédito: NASA, ESA, J. Mack, and J. Madrid et al.
+Licencia: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), según las
+[condiciones de ESA/Hubble](https://esahubble.org/copyright/). Se redujo la copia
+y se añadió ruido artificial con los mismos parámetros del conjunto. El TIFF
+local permanece intacto; no se ejecutó inferencia ni se evaluó restauración.
+
 ## Conjunto completo
 
 Cada carpeta contiene `referencia_preparada.png`, `entrada_ruidosa.png`,
@@ -21,19 +30,20 @@ Cada carpeta contiene `referencia_preparada.png`, `entrada_ruidosa.png`,
 - [potw1408a](potw1408a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 120.
 - [potw1428a](potw1428a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 248.
 - [potw1803a](potw1803a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 192; par histórico.
+- [potw1849a](potw1849a_sigma0.03_seed123_size256/entrada_ruidosa.png): 256 × 144.
 
 Se aplicó a todas sigma 0,03, media teórica 0 y semilla 123 con PCG64, después
 del redimensionamiento LANCZOS a lado máximo 256 y lados múltiplos de ocho.
 No se recortó ni amplió la imagen. La misma semilla hace reproducible cada
 degradación; imágenes de distinto tamaño reciben arreglos de ruido distintos.
-Se verificaron los píxeles reproducidos de los seis pares y sus hashes.
+Se verificaron los píxeles reproducidos de los siete pares y sus hashes.
 
 **Conversión de heic1702a:** el TIFF local es RGB de 16 bits por canal. Se
 decodificó con Pillow a RGB de 8 bits y se guardó una copia PNG temporal antes
 de preparar la referencia. Esta conversión pierde precisión tonal; no incorpora
 calibración científica ni ajuste de contraste. El original no se modificó.
 La conversión, el hash de esa copia, la versión de Pillow y el hash del TIFF
-quedan en sus registros. Los otros cinco TIFF locales son RGB de 8 bits.
+quedan en sus registros. Los otros seis TIFF locales son RGB de 8 bits.
 
 Fuente, autoría, licencia CC BY 4.0 y modificaciones de cada nueva derivada se
 conservan en `procedencia` de su `reproduccion.json`, a partir del
