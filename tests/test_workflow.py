@@ -13,7 +13,8 @@ class WorkflowTests(unittest.TestCase):
     def test_clip_failure_preserves_images_and_retry_does_not_diffuse(self):
         image=Image.new('RGB',(64,64))
         metadata={'semilla':42}
-        with patch.object(app,'run_diffusion',return_value=(image,image.copy(),metadata)) as diffusion, \
+        with patch.object(app, 'selected_engine', return_value='sd_tile'), \
+             patch.object(app,'run_diffusion',return_value=(image,image.copy(),metadata)) as diffusion, \
              patch.object(app,'analyze_images',side_effect=OSError('sin conexión')), \
              patch.object(app,'export_result',return_value='resultado.zip'):
             result=app.run_complete('archivo.png',0.1,30,42,256,progress=lambda *a,**kw:None)

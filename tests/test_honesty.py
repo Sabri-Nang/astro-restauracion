@@ -66,7 +66,7 @@ class DifferenceMapTests(unittest.TestCase):
         before = Image.new("RGB", (64, 64), (100, 100, 100))
         after = Image.new("RGB", (64, 64), (70, 160, 100))
         metadata = {"tipo": "prueba_simulada"}
-        with patch.object(app, "run_diffusion", return_value=(before, after, metadata)):
+        with patch.object(app, 'selected_engine', return_value='sd_tile'), patch.object(app, "run_diffusion", return_value=(before, after, metadata)):
             result = app.process_image("entrada.png", 0.2, 10, 42, 256)
         self.assertEqual(len(result), 5)
         self.assertEqual(result[2], (before, after))
