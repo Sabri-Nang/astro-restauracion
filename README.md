@@ -2,13 +2,19 @@
 
 > Aplicación experimental para intentar reducir el ruido de fotos astronómicas y revisar qué cambia durante su reconstrucción con IA.
 
+**Autora:** Sabrina Sanches · **Fecha de actualización:** 18 de noviembre de 2026
+
 ## Descripción
 
 El ruido dificulta apreciar estrellas tenues y estructuras difusas. Una reconstrucción puede mejorar la apariencia de una foto y, al mismo tiempo, borrar información o generar formas plausibles que no estaban registradas. AstroRestore AI conserva el archivo cargado y ayuda a revisar esas modificaciones antes de compartir el resultado.
 
 La aplicación está pensada para Julia, profesora de Física y aficionada a la astrofotografía. Utiliza **DiffBIR v2** —SCUNet seguido de SD 2.1 Base + IRControlNet— para limpieza y reconstrucción, y **CLIP** para una lectura general de las imágenes. Gradio permite cargar, comparar regiones, mostrar diferencias y descargar imágenes con un aviso de IA. El alcance es **reducción de ruido, sub-tarea B**: no entrenamiento ni superresolución.
 
-**Estado:** las funciones están implementadas y la app se validó de punta a punta en Colab con los siete pares gaussianos y con imágenes adicionales. En el caso documentado con métricas, ese pipeline mejoró globalmente frente a la entrada, pero empeoró frente a SCUNet solo y alteró una galaxia. La apariencia plausible confirma funcionamiento visual, no fidelidad científica. Faltan capturas y video.
+**Estado:** las funciones están implementadas y la app se validó de punta a punta en Colab con los siete pares gaussianos y con imágenes adicionales. En el caso documentado con métricas, ese pipeline mejoró globalmente frente a la entrada, pero empeoró frente a SCUNet solo y alteró una galaxia. La apariencia plausible confirma funcionamiento visual, no fidelidad científica. La entrega incluye capturas y video demo.
+
+## Qué es y por qué existe este repositorio
+
+Este repositorio contiene el código, el notebook de Google Colab, la documentación y la evidencia de AstroRestore AI. Existe para reproducir y revisar un flujo de reducción de ruido y reconstrucción de imágenes astronómicas, dejando visibles sus límites: una imagen más nítida o plausible no demuestra que los detalles sean reales. La comparación entre etapas ayuda a detectar cambios y a decidir qué debe contrastarse con otra observación antes de compartirlo como un hecho.
 
 ## Persona Usuaria
 
@@ -24,9 +30,35 @@ Julia orienta las decisiones de diseño, pero la interfaz y el informe están es
 
 ## Demo
 
-**Pendiente:** capturas o GIF de la interfaz actual y enlace al video de cinco minutos. La validación funcional de la revisión actual ya se realizó en Colab; todavía falta conservar la evidencia audiovisual de ese recorrido.
+### Video demo
+
+El [video demo de AstroRestore AI incluido en el repositorio](assets/demo/demo_astro_ai.mp4) muestra el problema, la carga, el estado del procesamiento, la comparación, la lectura visual, la descarga y la reflexión sobre lo real y lo generado. También puede verse desde [Google Drive](https://drive.google.com/file/d/10nEXRtKevPKg968XQnL29vO6psT6s4za/view?usp=drive_link). La primera preparación puede tardar más que las ejecuciones posteriores.
+
+Las capturas actuales documentan el recorrido funcional en Colab y complementan el video.
 
 El video deberá mostrar problema, carga, estado del procesamiento, comparación, lectura CLIP, descarga y reflexión sobre lo real y lo generado. Si se recorta la espera, debe indicarse. El [ensayo histórico de Tile y CLIP](assets/ejemplos/etapa3_tile/README.md) contiene resultados reales, pero no sustituye capturas de la app actual.
+
+### Capturas del recorrido
+
+1. **Carga, copia de trabajo y advertencia:** la app conserva el archivo original y muestra que una imagen más nítida no necesariamente es más real.
+
+   ![Carga de una foto y aviso de reconstrucción](assets/interfaz/capturas/01_carga_y_aviso.png)
+
+2. **Estado del procesamiento:** se informa la etapa actual y el tiempo transcurrido; el progreso no se presenta como porcentaje de ruido eliminado.
+
+   ![Estado del procesamiento y etapas](assets/interfaz/capturas/02_estado_del_procesamiento.png)
+
+3. **Etapas de la ejecución:** se muestran la foto cargada, la limpieza intermedia y la reconstrucción con IA de una misma ejecución.
+
+   ![Etapas de la reconstrucción](assets/interfaz/capturas/03_etapas_de_la_reconstruccion.png)
+
+4. **Comparación y revisión:** se puede elegir el par, revisar la misma región y ampliar sin volver a ejecutar el pipeline.
+
+   ![Comparación y revisión de cambios](assets/interfaz/capturas/04_comparacion_y_revision.png)
+
+5. **Lectura y descarga:** el informe aclara que es una impresión general, no una verificación de autenticidad, y permite descargar el ZIP con contexto.
+
+   ![Informe orientativo y descarga](assets/interfaz/capturas/05_informe_y_descarga.png)
 
 ## Qué es real y qué es inventado
 
@@ -36,7 +68,7 @@ El video deberá mostrar problema, carga, estado del procesamiento, comparación
 
 ![Cambios sobre una salida real conservada de Tile](assets/ejemplos/etapa3_tile/zonas_para_revisar.png)
 
-*Resultado histórico conservado; no es una captura de la nueva interfaz. Crédito: NASA, ESA, and J. Comerford (University of Colorado-Boulder), [potw1803a](https://esahubble.org/images/potw1803a/), CC BY 4.0. Captura actual: pendiente.*
+*Resultado histórico conservado; no es una captura de la nueva interfaz. Crédito: NASA, ESA, and J. Comerford (University of Colorado-Boulder), [potw1803a](https://esahubble.org/images/potw1803a/), CC BY 4.0. Las capturas actuales de la interfaz están documentadas en la galería de Demo.*
 
 **Advertencia:** «Más nítido no significa más real. La IA puede agregar detalles o borrar estrellas tenues. Compará los cambios antes de compartir; tu archivo original se conserva». El ZIP incluye una copia con la banda **Reconstruida con IA**, además de la salida sin marcas.
 
@@ -163,7 +195,7 @@ uv run --locked python -c "import json; from app import runtime_identity; print(
 
 Mismos hashes y mismo motor verifican paridad de esos archivos y selección; no garantizan imágenes idénticas entre hardware diferente. Colab clona `main` al ejecutar la preparación: un servidor ya abierto no se actualiza por hacer push. Para cargar cambios, detenerlo y preparar una copia nueva; si se utiliza ZIP, regenerarlo y volver a subirlo.
 
-Para comprobaciones sin pesos ni GPU: `uv run --locked python -m unittest discover -s tests -v`. Se verificaron estados transmitidos por HTTP, comparación, regiones, ampliación, reintento y ZIP con motor simulado. La instalación desde cero de la revisión final, la apariencia en navegador y el flujo GPU completo siguen pendientes.
+Para comprobaciones sin pesos ni GPU: `uv run --locked python -m unittest discover -s tests -v`. Se verificaron estados transmitidos por HTTP, comparación, regiones, ampliación, reintento y ZIP con motor simulado. La instalación desde cero de la revisión final y la comprensión del flujo en otra PC ya fueron verificadas; la apariencia en navegador y el flujo GPU completo requieren evidencia específica si se quiere declararlos como pruebas independientes.
 
 ## Uso
 
@@ -236,7 +268,7 @@ Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Comp
 - No se promete un tiempo actual: los ensayos CPU históricos de SD registraron 102–223 s por imagen y no predicen DiffBIR ni incluyen sus descargas. Colab usa sesiones y recursos temporales.
 - CLIP no localiza cambios, no mide ruido ni verifica autenticidad. Su recorte puede omitir bordes. El informe adapta a lenguaje cotidiano las dos descripciones principales de cada imagen; no es una descripción libre ni un análisis detallado de cada región seleccionada. Cambiar de región en el visor no recalcula esa lectura.
 - El pipeline oficial DiffBIR no incluye el filtro de contenido de la variante SD/Tile; no se desactivó el filtro de esta última.
-- Capturas, demo, instalación final desde cero y revisión con usuarias pendientes. No se declara fidelidad científica ni conformidad de accesibilidad completa.
+- El video demo, las capturas actuales, la instalación desde cero en otra PC y la revisión de comprensión con otra persona ya se realizaron; no se declara fidelidad científica ni conformidad de accesibilidad completa.
 
 ## Métricas de Calidad (opcional)
 
@@ -266,10 +298,12 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 ### Para cerrar la entrega
 
 - [x] Ejecutar y registrar en Colab al menos cinco imágenes distintas con la revisión final: carga, progreso real, comparación, análisis y ZIP. La ejecución incluyó los siete pares gaussianos y pruebas con imágenes adicionales; se conserva la distinción entre plausibilidad visual y fidelidad.
-- [ ] Validar comprensión con Julia, teclado, contraste visual, móvil y lector de pantalla.
-- [ ] Incorporar capturas actuales del uso y de la sección **Qué es real y qué es inventado**, y enlazar el video demo de cinco minutos con problema, flujo completo, resultados y reflexión.
-- [ ] Probar instalación desde cero de la revisión final en otra carpeta o máquina.
-- [ ] Completar reflexión personal de la autora y elegir licencia del código.
+- [x] Validar comprensión del flujo de uso con otra persona.
+- [ ] Revisar específicamente teclado, contraste visual, móvil y lector de pantalla.
+- [x] Incorporar capturas actuales del uso y de la sección **Qué es real y qué es inventado**.
+- [x] Enlazar el video demo de cinco minutos con problema, flujo completo, resultados y reflexión.
+- [x] Probar instalación desde cero de la revisión final en otra PC.
+- [ ] Completar reflexión personal de la autora.
 - [ ] Preparar defensa y completar el formulario de entrega con los enlaces finales.
 
 ### Mejoras y comprobaciones adicionales
@@ -281,6 +315,10 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 PSNR/SSIM/LPIPS, línea base clásica, lotes, historial, varios modelos y despliegue público son opcionales; no bloquean los criterios mínimos. No se necesita entrenar un modelo ni incorporar RAW/FITS para cumplir el alcance acordado. Posponer funciones complejas hasta cerrar la evidencia de entrega.
 
 ## Reflexiones y Aprendizajes
+
+### Conclusión
+
+Como conclusión, AstroRestore AI nos ayuda a limpiar una imagen astronómica y, en algunos casos, a obtener una apariencia más nítida. Su valor principal también está en la **revisión de los cambios**: podemos comparar la imagen original, la primera limpieza y la reconstrucción en una zona específica, por ejemplo alrededor de una estrella o una galaxia. Si aparece un punto nuevo o cambia una estructura, podemos detectarlo en la comparación. **Eso no demuestra que la IA haya inventado una estrella ni que el detalle sea real**; nos indica que debemos revisarlo y buscar otra observación antes de presentarlo como un hecho. Aprendí que una imagen más clara o convincente no siempre es una imagen más fiel al cielo observado.
 
 El proyecto permitió distinguir una inferencia correcta de una reducción de ruido demostrada. Una imagen convincente puede perder fidelidad; incluso una métrica global favorable puede ocultar alteraciones locales. También se distinguió tener VRAM de contar con un motor compatible, y compartir interfaz de poder ejecutar el mismo procesamiento en todo hardware.
 
