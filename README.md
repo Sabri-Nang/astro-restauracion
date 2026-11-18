@@ -36,7 +36,7 @@ El [video demo de AstroRestore AI incluido en el repositorio](assets/demo/demo_a
 
 Las capturas actuales documentan el recorrido funcional en Colab y complementan el video.
 
-El video deberá mostrar problema, carga, estado del procesamiento, comparación, lectura CLIP, descarga y reflexión sobre lo real y lo generado. Si se recorta la espera, debe indicarse. El [ensayo histórico de Tile y CLIP](assets/ejemplos/etapa3_tile/README.md) contiene resultados reales, pero no sustituye capturas de la app actual.
+El video muestra el problema, la carga, el estado del procesamiento, la comparación, la lectura CLIP, la descarga y la reflexión sobre lo real y lo generado. La primera preparación puede tardar más que las ejecuciones posteriores. El [ensayo histórico de Tile y CLIP](assets/ejemplos/etapa3_tile/README.md) contiene resultados reales, pero no sustituye capturas de la app actual.
 
 ### Capturas del recorrido
 
@@ -207,7 +207,7 @@ Para comprobaciones sin pesos ni GPU: `uv run --locked python -m unittest discov
 6. Abrir **Lectura general de la imagen · no verifica autenticidad** si se necesita. El informe **Una mirada a tu imagen** describe la apariencia sugerida para la foto y el resultado; si se mantiene, reúne ambas en una sola lectura. No es una medición de limpieza. **Dónde mirar** invita a revisar las mismas estrellas, contornos y fondo. La explicación del modelo y sus puntuaciones se conserva en la documentación y el registro descargable.
 7. Descargar el ZIP. Compartir `para_compartir_con_aviso.png` junto a la entrada. Su mapa corresponde a entrada/resultado completos, independientemente del par y región elegidos en pantalla. Si falla lectura o descarga, reintentarlas sin repetir difusión.
 
-La configuración DiffBIR es fija. No hay ejemplos ni parámetros técnicos en la vista principal. Las capturas de estos pasos están pendientes.
+La configuración DiffBIR es fija. No hay ejemplos ni parámetros técnicos en la vista principal. Las capturas de estos pasos están disponibles en la sección [Demo](#demo).
 
 ### Qué contiene la descarga
 
