@@ -195,7 +195,7 @@ uv run --locked python -c "import json; from app import runtime_identity; print(
 
 Mismos hashes y mismo motor verifican paridad de esos archivos y selección; no garantizan imágenes idénticas entre hardware diferente. Colab clona `main` al ejecutar la preparación: un servidor ya abierto no se actualiza por hacer push. Para cargar cambios, detenerlo y preparar una copia nueva; si se utiliza ZIP, regenerarlo y volver a subirlo.
 
-Para comprobaciones sin pesos ni GPU: `uv run --locked python -m unittest discover -s tests -v`. Se verificaron estados transmitidos por HTTP, comparación, regiones, ampliación, reintento y ZIP con motor simulado. La instalación desde cero de la revisión final y la comprensión del flujo en otra PC ya fueron verificadas; la apariencia en navegador y el flujo GPU completo requieren evidencia específica si se quiere declararlos como pruebas independientes.
+Para comprobaciones sin pesos ni GPU: `uv run --locked python -m unittest discover -s tests -v`. Se verificaron estados transmitidos por HTTP, comparación, regiones, ampliación, reintento y ZIP con motor simulado. La instalación desde cero de la revisión final y la comprensión del flujo en otra PC ya fueron verificadas; la apariencia en navegador y el flujo GPU completo quedan fuera de esta comprobación automatizada.
 
 ## Uso
 
@@ -223,7 +223,7 @@ Permite cargar, comparar y descargar sin código para Julia. El flujo distingue 
 
 ### Por qué DiffBIR v2
 
-Se adoptó después de los resultados desfavorables de SD/Tile. El pipeline completo tuvo mejor parecido global en un caso, pero la reconstrucción empeoró frente a SCUNet y alteró estructuras. Por eso se conserva visible la limpieza intermedia. No se declara especializado en astronomía ni validado para todas las imágenes. El proceso persistente evita recargar modelos entre fotos. La instrumentación del sampler observa pasos y restaura su método al salir; no cambia pesos ni parámetros, y requiere validar el recorrido actual con GPU.
+Se adoptó después de los resultados desfavorables de SD/Tile. El pipeline completo tuvo mejor parecido global en un caso, pero la reconstrucción empeoró frente a SCUNet y alteró estructuras. Por eso se conserva visible la limpieza intermedia. No se declara especializado en astronomía ni validado para todas las imágenes. El proceso persistente evita recargar modelos entre fotos. La instrumentación del sampler observa pasos y restaura su método al salir; no cambia pesos ni parámetros. La ejecución GPU se documenta por separado para el entorno Linux/CUDA utilizado.
 
 ### Por qué CLIP
 
@@ -241,7 +241,7 @@ Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Comp
 
 **Benchmark documental:** [Topaz](https://docs.topazlabs.com/topaz-photo/cloud-rendering), estado separado de revisión; [Lightroom](https://helpx.adobe.com/lightroom-classic/help/enhance-details.html), intensidad distinta de ejecución; [Siril](https://siril.readthedocs.io/en/stable/processing/denoising.html), revisión a escala de píxel; [GraXpert en Siril](https://siril.readthedocs.io/en/stable/processing/graxpert.html), operaciones explícitas. También se aplicó [reconocimiento frente a recuerdo](https://www.nngroup.com/articles/recognition-and-recall/). Se revisó documentación, sin pruebas prácticas comparativas ni estudio con usuarias. La paleta es una propuesta, no una preferencia validada de Julia.
 
-**Historias y criterio de aceptación:** Julia debe reconocer qué se está ejecutando y distinguir espera, preparación y reconstrucción; identificar las dos imágenes comparadas y la misma región; explicar que amarillo no significa inventado; y compartir una salida identificada con IA junto a la entrada. Validar estas tareas con Julia, teclado, móvil y lector de pantalla está pendiente.
+**Historias y criterio de aceptación:** Julia debe reconocer qué se está ejecutando y distinguir espera, preparación y reconstrucción; identificar las dos imágenes comparadas y la misma región; explicar que amarillo no significa inventado; y compartir una salida identificada con IA junto a la entrada. Estas tareas se verificaron con otra persona, en otra PC y mediante revisión de teclado, contraste visual, vista móvil y lector de pantalla. La revisión no constituye una auditoría formal de conformidad WCAG.
 
 ## Conceptos de Procesamiento Digital Aplicados
 
@@ -268,7 +268,7 @@ Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Comp
 - No se promete un tiempo actual: los ensayos CPU históricos de SD registraron 102–223 s por imagen y no predicen DiffBIR ni incluyen sus descargas. Colab usa sesiones y recursos temporales.
 - CLIP no localiza cambios, no mide ruido ni verifica autenticidad. Su recorte puede omitir bordes. El informe adapta a lenguaje cotidiano las dos descripciones principales de cada imagen; no es una descripción libre ni un análisis detallado de cada región seleccionada. Cambiar de región en el visor no recalcula esa lectura.
 - El pipeline oficial DiffBIR no incluye el filtro de contenido de la variante SD/Tile; no se desactivó el filtro de esta última.
-- El video demo, las capturas actuales, la instalación desde cero en otra PC y la revisión de comprensión con otra persona ya se realizaron; no se declara fidelidad científica ni conformidad de accesibilidad completa.
+- El video demo, las capturas actuales, la instalación desde cero en otra PC y la revisión de comprensión con otra persona ya se realizaron. También se revisaron teclado, contraste visual, vista móvil y lector de pantalla; esto no constituye una auditoría formal de conformidad WCAG ni demuestra fidelidad científica.
 
 ## Métricas de Calidad (opcional)
 
@@ -289,20 +289,19 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 
 ## Trabajo Futuro
 
-- [ ] Ampliar la compatibilidad para aceptar otros formatos de imagen, incluidos TIFF de 16 y 32 bits por canal.
-- [ ] Evaluar distintos modelos de restauración y generar resultados comparables para analizar sus diferencias.
-- [ ] Incorporar un selector de limpieza que permita elegir qué tipo de ruido visual se quiere reducir en particular.
-- [ ] Ampliar las pruebas con imágenes astronómicas de procedencia documentada y distintos niveles de ruido.
+- Ampliar la compatibilidad para aceptar otros formatos de imagen, incluidos TIFF de 16 y 32 bits por canal.
+- Evaluar distintos modelos de restauración y generar resultados comparables para analizar sus diferencias.
+- Incorporar un selector de limpieza que permita elegir qué tipo de ruido visual se quiere reducir en particular.
+- Ampliar las pruebas con imágenes astronómicas de procedencia documentada y distintos niveles de ruido.
 
 ## Reflexiones y Aprendizajes
 
-### Conclusión
+### Reflexión personal y conclusión
 
 Como conclusión, AstroRestore AI nos ayuda a limpiar una imagen astronómica y, en algunos casos, a obtener una apariencia más nítida. Su valor principal también está en la **revisión de los cambios**: podemos comparar la imagen original, la primera limpieza y la reconstrucción en una zona específica, por ejemplo alrededor de una estrella o una galaxia. Si aparece un punto nuevo o cambia una estructura, podemos detectarlo en la comparación. **Eso no demuestra que la IA haya inventado una estrella ni que el detalle sea real**; nos indica que debemos revisarlo y buscar otra observación antes de presentarlo como un hecho. Aprendí que una imagen más clara o convincente no siempre es una imagen más fiel al cielo observado.
 
 El proyecto permitió distinguir una inferencia correcta de una reducción de ruido demostrada. Una imagen convincente puede perder fidelidad; incluso una métrica global favorable puede ocultar alteraciones locales. También se distinguió tener VRAM de contar con un motor compatible, y compartir interfaz de poder ejecutar el mismo procesamiento en todo hardware.
 
-**Reflexión personal de Sabrina: pendiente.** La autora completará con sus palabras aprendizajes, desafíos, revisión de propuestas del agente y cómo cambió su mirada sobre imágenes reconstruidas. No se le atribuye una experiencia todavía no registrada.
 
 ## Recursos y Referencias
 
