@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from functools import lru_cache
 import hashlib
 from importlib.metadata import version
@@ -15,6 +16,30 @@ from time import perf_counter
 from PIL import Image, ImageOps
 
 from src.honesty import DISCLAIMER
+
+
+@contextmanager
+def observe_sampling_steps(sampler_class, on_step):
+    """Observa llamadas terminadas del sampler fijado sin cambiar tensores ni parámetros.
+
+    DiffBIR no ofrece callback público por paso. La sustitución se limita al
+    proceso aislado y serializado y se restaura también si falla el muestreo.
+    """
+    original = sampler_class.p_sample
+    completed = 0
+
+    def observed(sampler, *args, **kwargs):
+        nonlocal completed
+        result = original(sampler, *args, **kwargs)
+        completed += 1
+        on_step(completed, len(sampler.timesteps))
+        return result
+
+    sampler_class.p_sample = observed
+    try:
+        yield
+    finally:
+        sampler_class.p_sample = original
 
 
 MODEL_ID = "stable-diffusion-v1-5/stable-diffusion-v1-5"
@@ -77,13 +102,14 @@ class DiffBIRRuntime:
             weights = {key.removeprefix("module."): value for key, value in weights.items()}
         return weights
 
-    def process(self, before: Image.Image, destination: Path, on_phase=lambda _: None):
+    def process(self, before: Image.Image, destination: Path, on_phase=lambda _: None, on_step=lambda *_: None):
         """Devuelve reconstrucción, primera limpieza y registro sin métricas inventadas."""
         import gc
         import numpy as np
         import torch
         import torch.nn.functional as functional
         from diffbir.pipeline import SCUNetPipeline
+        from diffbir.sampler.spaced_sampler import SpacedSampler
         from src.diffbir_trial import PARAMETERS, UPSTREAM_REVISION
 
         if before.mode != "RGB" or min(before.size) < 64 or max(before.size) > 256:
@@ -92,12 +118,13 @@ class DiffBIRRuntime:
         started = perf_counter()
         reused = self.model is not None
         torch.cuda.reset_peak_memory_stats()
-        on_phase("primera_limpieza")
+        on_phase("preparando_limpieza")
         if self.cleaner is None:
             cleaner = self._instantiate("scunet.yaml")
             cleaner.load_state_dict(self._weights("scunet"), strict=True)
             self.cleaner = cleaner.eval()
         self.cleaner.to("cuda")
+        on_phase("primera_limpieza")
         noisy = np.asarray(before).copy()
         lq = torch.tensor(noisy[None], dtype=torch.float32, device="cuda").div(255).permute(0, 3, 1, 2).contiguous()
         captured = {}
@@ -157,7 +184,7 @@ class DiffBIRRuntime:
         on_phase("reconstruyendo")
         sampling = perf_counter()
         torch.manual_seed(42)
-        with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16):
+        with observe_sampling_steps(SpacedSampler, on_step), torch.no_grad(), torch.autocast("cuda", dtype=torch.float16):
             result = ConditionedPipeline(None, self.model, self.diffusion, None, "cuda").run(
                 noisy[None], steps=50, strength=1.0,
                 cleaner_tiled=False, cleaner_tile_size=512, cleaner_tile_stride=256,
@@ -168,6 +195,7 @@ class DiffBIRRuntime:
                 cfg_scale=4.0, start_point_type="noise", sampler_type="spaced", noise_aug=0,
                 rescale_cfg=False, s_churn=0, s_tmin=0, s_tmax=300, s_noise=1, eta=1, order=1,
             )
+        on_phase("ajustando_salida")
         torch.cuda.synchronize()
         if result.dtype != np.uint8 or result.shape != (1, before.height, before.width, 3):
             raise ValueError("La reconstrucción no conserva las dimensiones esperadas.")

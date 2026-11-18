@@ -141,10 +141,11 @@ class DiffBIRAppTests(unittest.TestCase):
             engine = SimpleNamespace()
             calls = []
 
-            def process(before, destination, on_phase):
+            def process(before, destination, on_phase, on_step):
                 print('Log de biblioteca externa')
                 calls.append(before.getpixel((0, 0)))
                 on_phase('reconstruyendo')
+                on_step(1, 50)
                 return before, before, before, {'motor': 'simulado_sin_inferencia'}
 
             engine.process = process
@@ -156,6 +157,7 @@ class DiffBIRAppTests(unittest.TestCase):
             self.assertEqual(calls, [(0, 40, 80), (1, 40, 80)])
             messages = [json.loads(line) for line in protocol.getvalue().splitlines()]
             self.assertEqual([message['id'] for message in messages if message['type'] == 'result'], ['0', '1'])
+            self.assertEqual([(message['completed'], message['total']) for message in messages if message['type'] == 'step'], [(1, 50), (1, 50)])
             self.assertNotIn('Log de biblioteca', protocol.getvalue())
             self.assertIn('Log de biblioteca', logs.getvalue())
 

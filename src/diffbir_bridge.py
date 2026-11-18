@@ -24,9 +24,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 PHASES = {
     "iniciando": (0.1, "Preparando la IA; la primera vez puede tardar varios minutos"),
+    "preparando_limpieza": (0.15, "Preparando el modelo de limpieza; puede necesitar descargar archivos"),
     "primera_limpieza": (0.2, "Preparando una primera limpieza de tu foto"),
     "preparando_reconstruccion": (0.35, "Preparando la reconstrucción de detalles"),
     "reconstruyendo": (0.55, "Reconstruyendo la imagen; revisá los detalles al terminar"),
+    "ajustando_salida": (0.75, "Terminando la imagen y comprobando el resultado"),
 }
 
 
@@ -126,6 +128,11 @@ class DiffBIRSession:
                     if message["type"] == "phase":
                         value, description = PHASES[message["phase"]]
                         progress(value, desc=description)
+                    elif message["type"] == "step":
+                        completed, total = message["completed"], message["total"]
+                        if not (isinstance(completed, int) and isinstance(total, int) and 0 <= completed <= total and total > 0):
+                            raise RuntimeError("La reconstrucción informó un avance no válido.")
+                        progress((completed, total), desc="Generando reconstrucción")
                     elif message["type"] == "error":
                         raise RuntimeError("No se pudo reconstruir esta foto. Tu original se conserva. Revisá el registro de Colab; no se sustituyó la salida por otra imagen.")
                     elif message["type"] == "result":
@@ -196,6 +203,9 @@ def serve(upstream: Path):
         def phase(name):
             send({"type": "phase", "phase": name})
 
+        def step(completed, total):
+            send({"type": "step", "completed": completed, "total": total})
+
         try:
             with contextlib.redirect_stdout(sys.stderr):
                 if engine is None:
@@ -203,7 +213,7 @@ def serve(upstream: Path):
                     engine = DiffBIRRuntime(upstream, ROOT / ".cache/diffbir")
                 with Image.open(request["input"]) as image:
                     before = image.copy()
-                _, _, _, metadata = engine.process(before, Path(request["output"]), on_phase=phase)
+                _, _, _, metadata = engine.process(before, Path(request["output"]), on_phase=phase, on_step=step)
             send({"type": "result", "metadata": metadata})
         except Exception:
             traceback.print_exc(file=sys.stderr)
