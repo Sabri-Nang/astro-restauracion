@@ -3,6 +3,7 @@ name = "astro-restauracion"
 version = "0.1.0"
 description = "Restauración y análisis de imágenes astronómicas mediante inteligencia artificial"
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
     { name = "Sabrina Sanches", email = "sabrinadelosangelessanches@gmail.com" }
 ]

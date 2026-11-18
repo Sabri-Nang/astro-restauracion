@@ -7,6 +7,28 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# El repositorio conserva el laboratorio y las validaciones históricas para
+# poder reproducirlas localmente. No forman parte del runtime de la app en
+# Colab. Esta lista evita enviar módulos experimentales o duplicar activos.
+APP_RUNTIME_FILES = (
+    "src/analysis.py",
+    "src/diffbir_bridge.py",
+    "src/diffbir_trial.py",
+    "src/diffusion.py",
+    "src/evaluation.py",
+    "src/experiment.py",
+    "src/export.py",
+    "src/honesty.py",
+    "src/noise.py",
+)
+APP_RUNTIME_ASSETS = (
+    "assets/interfaz/tema.css",
+    "assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256/entrada_ruidosa.png",
+    "assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256/experimento.json",
+    "assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256/referencia_preparada.png",
+    "assets/ruido_gaussiano/potw1803a_sigma0.03_seed123_size256/reproduccion.json",
+)
+
 
 def cell(kind, name, text):
     result = dict(cell_type=kind, id=name, metadata={}, source=text.splitlines(keepends=True))
@@ -17,10 +39,11 @@ def cell(kind, name, text):
 
 def main():
     files = [ROOT / name for name in ("app.py", "pyproject.toml", "uv.lock", ".python-version", "README.md")]
-    for directory in ("src", "assets/interfaz", "assets/ruido_gaussiano", "assets/ejemplos/etapa3_tile"):
-        files += [p for p in (ROOT / directory).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
-    files.append(ROOT / "assets/ejemplos/README.md")
+    files += [ROOT / name for name in APP_RUNTIME_FILES + APP_RUNTIME_ASSETS]
     files += [ROOT / "colab/diffbir" / name for name in ("pyproject.toml", "uv.lock")]
+    missing = [path.relative_to(ROOT).as_posix() for path in files if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("Faltan archivos del runtime de Colab: " + ", ".join(missing))
     payload = {p.relative_to(ROOT).as_posix(): p.read_bytes() for p in files}
     manifest = dict(
         git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),

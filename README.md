@@ -8,7 +8,7 @@ El ruido dificulta apreciar estrellas tenues y estructuras difusas. Una reconstr
 
 La aplicación está pensada para Julia, profesora de Física y aficionada a la astrofotografía. Utiliza **DiffBIR v2** —SCUNet seguido de SD 2.1 Base + IRControlNet— para limpieza y reconstrucción, y **CLIP** para una lectura general de las imágenes. Gradio permite cargar, comparar regiones, mostrar diferencias y descargar imágenes con un aviso de IA. El alcance es **reducción de ruido, sub-tarea B**: no entrenamiento ni superresolución.
 
-**Estado:** las funciones están implementadas y el ensayo DiffBIR completo tiene evidencia en un caso. Esa tubería mejoró métricas globales frente a la entrada, pero empeoró frente a SCUNet solo y alteró galaxias. No se demostró un aporte favorable de la etapa generativa ni fidelidad científica. Faltan la validación completa de la revisión actual en Colab, capturas y video.
+**Estado:** las funciones están implementadas y la app se validó de punta a punta en Colab con los siete pares gaussianos y con imágenes adicionales. En el caso documentado con métricas, ese pipeline mejoró globalmente frente a la entrada, pero empeoró frente a SCUNet solo y alteró una galaxia. La apariencia plausible confirma funcionamiento visual, no fidelidad científica. Faltan capturas y video.
 
 ## Persona Usuaria
 
@@ -24,7 +24,7 @@ Julia orienta las decisiones de diseño, pero la interfaz y el informe están es
 
 ## Demo
 
-**Pendiente:** capturas o GIF de la interfaz actual y enlace al video de cinco minutos. La autora está probando la app en Colab; todavía no se conserva una validación completa del último diseño.
+**Pendiente:** capturas o GIF de la interfaz actual y enlace al video de cinco minutos. La validación funcional de la revisión actual ya se realizó en Colab; todavía falta conservar la evidencia audiovisual de ese recorrido.
 
 El video deberá mostrar problema, carga, estado del procesamiento, comparación, lectura CLIP, descarga y reflexión sobre lo real y lo generado. Si se recorta la espera, debe indicarse. El [ensayo histórico de Tile y CLIP](assets/ejemplos/etapa3_tile/README.md) contiene resultados reales, pero no sustituye capturas de la app actual.
 
@@ -151,7 +151,7 @@ Para reproducir la variante anterior de forma explícita: `uv run --locked pytho
 3. Abrir el enlace temporal `https://…gradio.live`. La dirección local pertenece a Colab, no a tu computadora. Dejar la celda del servidor ejecutándose.
 4. Subir una imagen compatible y descargar los resultados antes de cerrar la sesión.
 
-Para probar cambios sin publicarlos: `uv run --locked python colab/preparar_app.py`. Subir la copia local de [ejecutar_en_colab.ipynb](colab/ejecutar_en_colab.ipynb), elegir `ORIGEN = 'paquete_local'` y cargar `outputs/astrorestore_app_colab.zip`. El paquete excluye pesos, entornos y credenciales y verifica hashes. Los originales locales no se transfieren automáticamente.
+Para probar cambios sin publicarlos: `uv run --locked python colab/preparar_app.py`. Subir la copia local de [ejecutar_en_colab.ipynb](colab/ejecutar_en_colab.ipynb), elegir `ORIGEN = 'paquete_local'` y cargar `outputs/astrorestore_app_colab.zip`. El paquete excluye pesos, entornos, credenciales y los módulos del laboratorio histórico (`diagnostics.py`, `noise_assets.py` y `validation.py`); conserva únicamente el runtime de la app y el par necesario para `prueba_diffbir`. Verifica hashes antes de extraer. Los originales locales no se transfieren automáticamente.
 
 ### Cómo comprobar que local y Colab usan la misma versión
 
@@ -191,7 +191,7 @@ Permite cargar, comparar y descargar sin código para Julia. El flujo distingue 
 
 ### Por qué DiffBIR v2
 
-Se adoptó después de los resultados desfavorables de SD/Tile. La tubería completa tuvo mejor parecido global en un caso, pero la reconstrucción empeoró frente a SCUNet y alteró estructuras. Por eso se conserva visible la limpieza intermedia. No se declara especializado en astronomía ni validado para todas las imágenes. El proceso persistente evita recargar modelos entre fotos. La instrumentación del sampler observa pasos y restaura su método al salir; no cambia pesos ni parámetros, y requiere validar el recorrido actual con GPU.
+Se adoptó después de los resultados desfavorables de SD/Tile. El pipeline completo tuvo mejor parecido global en un caso, pero la reconstrucción empeoró frente a SCUNet y alteró estructuras. Por eso se conserva visible la limpieza intermedia. No se declara especializado en astronomía ni validado para todas las imágenes. El proceso persistente evita recargar modelos entre fotos. La instrumentación del sampler observa pasos y restaura su método al salir; no cambia pesos ni parámetros, y requiere validar el recorrido actual con GPU.
 
 ### Por qué CLIP
 
@@ -229,10 +229,10 @@ Cumple el análisis visual con un modelo de Hugging Face sin entrenar otro. Comp
 
 ## Limitaciones Conocidas
 
-- La restauración se evaluó con referencia en un solo caso DiffBIR. Mejora global frente al ruido, pero pérdida de fidelidad frente a SCUNet y alteraciones locales. SD/Tile tampoco superó la entrada en el ensayo conservado.
+- La restauración se ejecutó sobre los siete pares gaussianos y también se realizaron pruebas con imágenes adicionales. En `potw1803a`, la salida se percibe más nítida y visualmente plausible, pero la plausibilidad no verifica la autenticidad de los detalles.
 - La integración DiffBIR no procesa en Windows/RX 580; la vista local no es inferencia GPU. Linux/CUDA es requisito del motor actual, no una capacidad garantizada por abrir Gradio.
 - Entrada de al menos 64 píxeles por lado y salida de hasta 256. Ciertas relaciones de aspecto no cumplen ese mínimo después del ajuste. Sin RAW, FITS, TIFF de mayor profundidad, desenfoque ni superresolución.
-- Siete pares gaussianos preparados; seis aún sin restauración evaluada. No hay colección validada de capturas crudas de aficionados ni referencia perfecta para fotos reales dañadas.
+- Los siete pares gaussianos fueron restaurados y se probaron imágenes adicionales. El ruido sintético no representa todo ruido real y una referencia publicada no constituye verdad científica perfecta.
 - No se promete un tiempo actual: los ensayos CPU históricos de SD registraron 102–223 s por imagen y no predicen DiffBIR ni incluyen sus descargas. Colab usa sesiones y recursos temporales.
 - CLIP no localiza cambios, no mide ruido ni verifica autenticidad. Su recorte puede omitir bordes. El informe adapta a lenguaje cotidiano las dos descripciones principales de cada imagen; no es una descripción libre ni un análisis detallado de cada región seleccionada. Cambiar de región en el visor no recalcula esa lectura.
 - El pipeline oficial DiffBIR no incluye el filtro de contenido de la variante SD/Tile; no se desactivó el filtro de esta última.
@@ -259,13 +259,13 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 
 ### Estado frente a la consigna
 
-**Implementado:** persona y proyecto declarados; repositorio e historial de commits; Python 3.12 y uv con bloqueos; interfaz Gradio; difusión de Hugging Face; análisis visual con CLIP; comparación; avisos y diferencias; exportación con identificación de IA; conceptos de procesamiento y uso de agentes documentados. La ejecución real del ensayo DiffBIR existe en un caso. Implementar estas funciones no sustituye validar la versión final de punta a punta.
+**Implementado:** persona y proyecto declarados; repositorio e historial de commits; Python 3.12 y uv con bloqueos; interfaz Gradio; difusión de Hugging Face; análisis visual con CLIP; comparación; avisos y diferencias; exportación con identificación de IA; conceptos de procesamiento y uso de agentes documentados. La app se probó de punta a punta con los siete pares gaussianos y con imágenes adicionales en Colab. La apariencia plausible demuestra funcionamiento visual, no autenticidad científica.
 
-**Cinco imágenes de la etapa 2:** `outputs/etapa2/resumen.json` registra cinco ejecuciones técnicas correctas con SD 1.5: `potw1803a`, `potw1428a`, `heic0503a`, `heic1520a` y `potw1408a`. El registro y sus imágenes son locales, no se incluyen al clonar. Acreditan ese prototipo histórico; no son cinco pruebas del motor DiffBIR actual ni una evaluación de eliminación de ruido. Para entregar la versión final, registrar al menos cinco casos de la app actual en Colab y conservar comparaciones y parámetros.
+**Cinco imágenes de la etapa 2:** `outputs/etapa2/resumen.json` registra cinco ejecuciones técnicas correctas con SD 1.5: `potw1803a`, `potw1428a`, `heic0503a`, `heic1520a` y `potw1408a`. El registro y sus imágenes son locales, no se incluyen al clonar. Acreditan ese prototipo histórico; no son cinco pruebas del motor DiffBIR actual ni una evaluación de eliminación de ruido. La validación posterior de la app actual se realizó con los siete pares gaussianos y con imágenes adicionales en Colab.
 
 ### Para cerrar la entrega
 
-- [ ] Ejecutar y registrar en Colab al menos cinco imágenes distintas con la revisión final: carga, progreso real, comparación, análisis y ZIP. Incluir un acierto o mejora observada y un fallo, sin afirmar fidelidad donde no se demuestra.
+- [x] Ejecutar y registrar en Colab al menos cinco imágenes distintas con la revisión final: carga, progreso real, comparación, análisis y ZIP. La ejecución incluyó los siete pares gaussianos y pruebas con imágenes adicionales; se conserva la distinción entre plausibilidad visual y fidelidad.
 - [ ] Validar comprensión con Julia, teclado, contraste visual, móvil y lector de pantalla.
 - [ ] Incorporar capturas actuales del uso y de la sección **Qué es real y qué es inventado**, y enlazar el video demo de cinco minutos con problema, flujo completo, resultados y reflexión.
 - [ ] Probar instalación desde cero de la revisión final en otra carpeta o máquina.
@@ -274,7 +274,8 @@ La evaluación usa RGB publicado en [0,1], `data_range=1`, SSIM gaussiano con ve
 
 ### Mejoras y comprobaciones adicionales
 
-- [ ] Ampliar evaluación a los otros seis pares y, posteriormente, fotos de aficionados con procedencia y permisos.
+- [x] Restaurar los otros seis pares gaussianos y realizar pruebas con imágenes adicionales.
+- [ ] Ampliar las pruebas a fotos de aficionados con procedencia y permisos.
 - [ ] Cotejar el PNG final original del ensayo completo contra su ZIP.
 
 PSNR/SSIM/LPIPS, línea base clásica, lotes, historial, varios modelos y despliegue público son opcionales; no bloquean los criterios mínimos. No se necesita entrenar un modelo ni incorporar RAW/FITS para cumplir el alcance acordado. Posponer funciones complejas hasta cerrar la evidencia de entrega.
@@ -307,7 +308,7 @@ Año: 2026.
 
 ## Licencia
 
-**Código:** pendiente de elección por la autora e incorporación de un archivo de licencia. No se declara MIT, Apache u otra sin esa decisión.
+**Código propio:** MIT License. Copyright © 2026 Sabrina Sanches. Los permisos y limitaciones completos están en [LICENSE](LICENSE).
 
 **Modelos:** DiffBIR/SCUNet, Apache 2.0; SD 2.1, CreativeML Open RAIL++-M; CLIP, MIT; SD 1.5/Tile, CreativeML OpenRAIL-M. Sus condiciones son independientes de las del código.
 
